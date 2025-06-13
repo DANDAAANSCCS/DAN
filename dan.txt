@@ -12,25 +12,29 @@ getgenv().KillAura = true
 getgenv().loopToCoordinates = true
 getgenv().AntiKnockback = true
 
--- ✅ 1. Rapid Heavy Punch Kill Aura (sin escudo)
+-- ✅ 1. Rapid Heavy Punch cada 14 segundos, golpea a varios a la vez
 spawn(function()
-	while KillAura do
-		wait(0.0005)
+	while true do
+		task.wait(14) -- espera 14 segundos antes de atacar
 		pcall(function()
-			local myHRP = player.Character and player.Character:FindFirstChild("HumanoidRootPart")
-			if not myHRP then return end
+			local tiempoAtaque = tick() + 1 -- duración del golpeo (1 segundo)
+			while tick() < tiempoAtaque do
+				local myHRP = player.Character and player.Character:FindFirstChild("HumanoidRootPart")
+				if not myHRP then break end
 
-			for _, v in pairs(game.Players:GetPlayers()) do
-				if v ~= player and v.Character and v.Character:FindFirstChild("HumanoidRootPart") then
-					local objetivoHRP = v.Character.HumanoidRootPart
-					local distancia = (myHRP.Position - objetivoHRP.Position).Magnitude
-					local tieneEscudo = v.Character:FindFirstChildOfClass("ForceField") or objetivoHRP:FindFirstChild("Shield") or v.Character:FindFirstChild("Shield")
-					local estaVivo = v.Character:FindFirstChild("Humanoid") and v.Character.Humanoid.Health > 0
+				for _, v in pairs(game.Players:GetPlayers()) do
+					if v ~= player and v.Character and v.Character:FindFirstChild("HumanoidRootPart") then
+						local objetivoHRP = v.Character.HumanoidRootPart
+						local distancia = (myHRP.Position - objetivoHRP.Position).Magnitude
+						local tieneEscudo = v.Character:FindFirstChildOfClass("ForceField") or objetivoHRP:FindFirstChild("Shield") or v.Character:FindFirstChild("Shield")
+						local estaVivo = v.Character:FindFirstChild("Humanoid") and v.Character.Humanoid.Health > 0
 
-					if distancia < rango and not tieneEscudo and estaVivo then
-						game:GetService("ReplicatedStorage").Events.Punch:FireServer(0.4, 0.1, 1)
+						if distancia < rango and not tieneEscudo and estaVivo then
+							game:GetService("ReplicatedStorage").Events.Punch:FireServer(0.4, 0.1, 1)
+						end
 					end
 				end
+				task.wait(0.1)
 			end
 		end)
 	end
