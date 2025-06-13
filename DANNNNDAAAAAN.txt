@@ -1,0 +1,89 @@
+-- Cargar UI
+local Library = loadstring(game:HttpGet("https://raw.githubusercontent.com/xHeptc/Kavo-UI-Library/main/source.lua"))()
+local Window = Library.CreateLib("Auto TP Loop por Chat", "Ocean")
+
+local MainTab = Window:NewTab("Main")
+local MainSection = MainTab:NewSection("Todo activo automáticamente")
+
+local Players = game:GetService("Players")
+local player = Players.LocalPlayer
+local objetivoNombre = ""
+
+-- ✅ Conectarse al evento Chatted de todos los jugadores (incluidos nuevos)
+local function conectarJugador(jugador)
+	if jugador == player then return end
+	jugador.Chatted:Connect(function(msg)
+		objetivoNombre = jugador.Name
+	end)
+end
+
+-- Conectar a todos los jugadores actuales
+for _, v in pairs(Players:GetPlayers()) do
+	conectarJugador(v)
+end
+
+-- Conectar a nuevos jugadores que se unan
+Players.PlayerAdded:Connect(conectarJugador)
+
+-- ✅ Anti-AFK
+for _, v in pairs(getconnections(player.Idled)) do v:Disable() end
+player.Idled:Connect(function()
+	game:GetService("VirtualUser"):Button2Down(Vector2.new(), workspace.CurrentCamera.CFrame)
+	wait(1)
+	game:GetService("VirtualUser"):Button2Up(Vector2.new(), workspace.CurrentCamera.CFrame)
+end)
+
+-- ✅ No Clip
+game:GetService("RunService").Stepped:Connect(function()
+	local char = player.Character
+	if char then
+		for _, part in pairs(char:GetDescendants()) do
+			if part:IsA("BasePart") then
+				part.CanCollide = false
+			end
+		end
+	end
+end)
+
+-- ✅ Anti-Knockback
+local LastPosition = nil
+spawn(function()
+	while true do
+		task.wait()
+		local char = player.Character
+		if char and char:FindFirstChild("HumanoidRootPart") then
+			local root = char.HumanoidRootPart
+			if root.AssemblyLinearVelocity.Magnitude > 250 or root.AssemblyAngularVelocity.Magnitude > 250 then
+				root.AssemblyLinearVelocity = Vector3.zero
+				root.AssemblyAngularVelocity = Vector3.zero
+				if LastPosition then
+					root.CFrame = LastPosition
+				end
+			elseif root.AssemblyLinearVelocity.Magnitude < 50 then
+				LastPosition = root.CFrame
+			end
+		end
+	end
+end)
+
+-- ✅ TP loop hacia el último jugador que habló
+spawn(function()
+	while true do
+		wait(0.5)
+		pcall(function()
+			if objetivoNombre == "" then return end
+			local objetivo = Players:FindFirstChild(objetivoNombre)
+			local miChar = player.Character
+			if objetivo and objetivo.Character and miChar then
+				local miRoot = miChar:FindFirstChild("HumanoidRootPart")
+				local objRoot = objetivo.Character:FindFirstChild("HumanoidRootPart")
+				if miRoot and objRoot then
+					local atras = objRoot.CFrame.LookVector * -2
+					miRoot.CFrame = objRoot.CFrame + atras
+				end
+			end
+		end)
+	end
+end)
+
+MainSection:NewLabel("TP Loop al último que habló por chat")
