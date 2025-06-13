@@ -1,46 +1,46 @@
---// Panel Azul "ña"
+-- Cargar la librería de UI
 local Library = loadstring(game:HttpGet("https://raw.githubusercontent.com/xHeptc/Kavo-UI-Library/main/source.lua"))()
-local Window = Library.CreateLib("🔵 ña", "Ocean")
+local Window = Library.CreateLib("AutoFarm - Age of Heroes", "BloodTheme")
 
+local AutoFarmTab = Window:NewTab("AutoFarm")
+local Section = AutoFarmTab:NewSection("Activados Automáticamente")
+
+-- Variables
 local player = game.Players.LocalPlayer
-local rango = 25
+local rango = 15
+getgenv().KillAura = true
+getgenv().loopToCoordinates = true
+getgenv().AntiKnockback = true
 
--- Variables globales
-getgenv().autoPunch = false
-getgenv().loopToCoordinates = false
-getgenv().AntiKnockback = false
+-- ✅ 1. Rapid Heavy Punch cada 14 segundos, golpea a varios a la vez durante 4 segundos
+spawn(function()
+	while true do
+		task.wait(14) -- espera 14 segundos antes de atacar
+		pcall(function()
+			local tiempoAtaque = tick() + 4 -- duración del golpeo (4 segundos)
+			while tick() < tiempoAtaque do
+				local myHRP = player.Character and player.Character:FindFirstChild("HumanoidRootPart")
+				if not myHRP then break end
 
--- Auto Punch
-local function startAutoPunch()
-	spawn(function()
-		while getgenv().autoPunch do
-			task.wait(14)
-			pcall(function()
-				local tiempoAtaque = tick() + 1
-				while tick() < tiempoAtaque and getgenv().autoPunch do
-					local myHRP = player.Character and player.Character:FindFirstChild("HumanoidRootPart")
-					if not myHRP then break end
+				for _, v in pairs(game.Players:GetPlayers()) do
+					if v ~= player and v.Character and v.Character:FindFirstChild("HumanoidRootPart") then
+						local objetivoHRP = v.Character.HumanoidRootPart
+						local distancia = (myHRP.Position - objetivoHRP.Position).Magnitude
+						local tieneEscudo = v.Character:FindFirstChildOfClass("ForceField") or objetivoHRP:FindFirstChild("Shield") or v.Character:FindFirstChild("Shield")
+						local estaVivo = v.Character:FindFirstChild("Humanoid") and v.Character.Humanoid.Health > 0
 
-					for _, v in pairs(game.Players:GetPlayers()) do
-						if v ~= player and v.Character and v.Character:FindFirstChild("HumanoidRootPart") then
-							local objetivoHRP = v.Character.HumanoidRootPart
-							local distancia = (myHRP.Position - objetivoHRP.Position).Magnitude
-							local tieneEscudo = v.Character:FindFirstChildOfClass("ForceField") or objetivoHRP:FindFirstChild("Shield") or v.Character:FindFirstChild("Shield")
-							local estaVivo = v.Character:FindFirstChild("Humanoid") and v.Character.Humanoid.Health > 0
-
-							if distancia < rango and not tieneEscudo and estaVivo then
-								game:GetService("ReplicatedStorage").Events.Punch:FireServer(0.4, 0.1, 1)
-							end
+						if distancia < rango and not tieneEscudo and estaVivo then
+							game:GetService("ReplicatedStorage").Events.Punch:FireServer(0.4, 0.1, 1)
 						end
 					end
-					task.wait(0.1)
 				end
-			end)
-		end
-	end)
-end
+				task.wait(0.025) -- MÁS RÁPIDO: golpes cada 0.025 segundos (~40 por segundo)
+			end
+		end)
+	end
+end)
 
--- Auto Teleport Loop
+-- ✅ 2. Farm Zone #1 (TP loop a Edificio en construcción)
 local function teleportLoop()
 	while getgenv().loopToCoordinates do
 		pcall(function()
@@ -50,34 +50,39 @@ local function teleportLoop()
 				rootPart.CFrame = CFrame.new(650, 779, 284)
 			end
 		end)
-		task.wait(1)
+		task.wait(0.5)
 	end
 end
 
--- Anti Knockback
+spawn(teleportLoop)
+player.CharacterAdded:Connect(function()
+	if getgenv().loopToCoordinates then
+		spawn(teleportLoop)
+	end
+end)
+
+-- ✅ 3. Anti-Knockback
 local LastPosition = nil
-local function startAntiKnockback()
-	spawn(function()
-		while getgenv().AntiKnockback do
-			task.wait()
-			local char = player.Character
-			if char and char:FindFirstChild("HumanoidRootPart") then
-				local part = char.HumanoidRootPart
-				if part.AssemblyLinearVelocity.Magnitude > 250 or part.AssemblyAngularVelocity.Magnitude > 250 then
-					part.AssemblyLinearVelocity = Vector3.new(0, 0, 0)
-					part.AssemblyAngularVelocity = Vector3.new(0, 0, 0)
-					if LastPosition then
-						part.CFrame = LastPosition
-					end
-				elseif part.AssemblyLinearVelocity.Magnitude < 50 then
-					LastPosition = part.CFrame
+spawn(function()
+	while getgenv().AntiKnockback do
+		task.wait()
+		local char = player.Character
+		if char and char:FindFirstChild("HumanoidRootPart") then
+			local part = char.HumanoidRootPart
+			if part.AssemblyLinearVelocity.Magnitude > 250 or part.AssemblyAngularVelocity.Magnitude > 250 then
+				part.AssemblyLinearVelocity = Vector3.new(0, 0, 0)
+				part.AssemblyAngularVelocity = Vector3.new(0, 0, 0)
+				if LastPosition then
+					part.CFrame = LastPosition
 				end
+			elseif part.AssemblyLinearVelocity.Magnitude < 50 then
+				LastPosition = part.CFrame
 			end
 		end
-	end)
-end
+	end
+end)
 
--- Noclip
+-- ✅ 4. No Clip permanente (activo desde el inicio)
 game:GetService("RunService").Stepped:Connect(function()
 	local char = player.Character
 	if char then
@@ -89,20 +94,29 @@ game:GetService("RunService").Stepped:Connect(function()
 	end
 end)
 
--- Anti-AFK
-for _, v in pairs(getconnections(player.Idled)) do v:Disable() end
+-- ✅ 5. Anti-AFK
+for _, v in pairs(getconnections(player.Idled)) do
+	v:Disable()
+end
+
 player.Idled:Connect(function()
 	game:GetService("VirtualUser"):Button2Down(Vector2.new(0,0), workspace.CurrentCamera.CFrame)
 	wait(1)
 	game:GetService("VirtualUser"):Button2Up(Vector2.new(0,0), workspace.CurrentCamera.CFrame)
 end)
 
--- Mensajes Automáticos
+-- ✅ 6. Mensajes aleatorios al chat cada 6 segundos
 local tablaMensajes = {
-	"Soy el mejor B)", "Farm time 😎", "Yo ni me muevo y gano jaja",
-	"¿Dónde están los malos?", "No pueden contra mí >:)", "Esto es automático papá",
-	"Me encanta este juego B)", "Quiero más poder 🔥"
+	"Soy el mejor B)",
+	"Farm time 😎",
+	"Yo ni me muevo y gano jaja",
+	"¿Dónde están los malos?",
+	"No pueden contra mí >:)",
+	"Esto es automático papá",
+	"Me encanta este juego B)",
+	"Quiero más poder 🔥"
 }
+
 spawn(function()
 	while true do
 		task.wait(10)
@@ -113,23 +127,7 @@ spawn(function()
 	end
 end)
 
---// GUI: Sección principal
-local Tab = Window:NewTab("Funciones")
-local Section = Tab:NewSection("Activadores")
+-- UI mensaje
+Section:NewLabel("Script activo: Punch, TP, AntiKnockback, NoClip, AntiAFK, Chat spam")
 
-Section:NewToggle("Auto Punch", "Golpea enemigos cercanos", function(state)
-	getgenv().autoPunch = state
-	if state then startAutoPunch() end
-end)
-
-Section:NewToggle("Auto Teleport", "Se teletransporta cada segundo", function(state)
-	getgenv().loopToCoordinates = state
-	if state then spawn(teleportLoop) end
-end)
-
-Section:NewToggle("Anti Knockback", "Evita que te tiren", function(state)
-	getgenv().AntiKnockback = state
-	if state then startAntiKnockback() end
-end)
-
-Section:NewLabel("Noclip activado automáticamente")
+Section:NewLabel("Script activo: Rapid Punch, FarmZone, AntiKnockback, NoClip, AntiAFK")
