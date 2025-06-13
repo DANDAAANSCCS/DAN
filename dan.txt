@@ -46,7 +46,7 @@ local function teleportLoop()
 				rootPart.CFrame = CFrame.new(650, 779, 284)
 			end
 		end)
-		task.wait(2)
+		task.wait(1)
 	end
 end
 
@@ -78,38 +78,52 @@ spawn(function()
 	end
 end)
 
--- ✅ 4. No Clip (activar con tecla N)
-local uis = game:GetService("UserInputService")
-local noclip = false
-
-uis.InputBegan:Connect(function(key)
-	if key.KeyCode == Enum.KeyCode.N then
-		noclip = not noclip
-	end
-end)
-
+-- ✅ 4. No Clip permanente (activo desde el inicio)
 game:GetService("RunService").Stepped:Connect(function()
-	if noclip then
-		local char = player.Character
-		if char then
-			for _, v in pairs(char:GetDescendants()) do
-				if v:IsA("BasePart") and v.CanCollide then
-					v.CanCollide = false
-				end
+	local char = player.Character
+	if char then
+		for _, part in pairs(char:GetDescendants()) do
+			if part:IsA("BasePart") then
+				part.CanCollide = false
 			end
 		end
 	end
 end)
 
 -- ✅ 5. Anti-AFK
-for _, v in pairs(getconnections(game:GetService("Players").LocalPlayer.Idled)) do
+for _, v in pairs(getconnections(player.Idled)) do
 	v:Disable()
 end
 
-game:GetService("Players").LocalPlayer.Idled:Connect(function()
+player.Idled:Connect(function()
 	game:GetService("VirtualUser"):Button2Down(Vector2.new(0,0), workspace.CurrentCamera.CFrame)
 	wait(1)
 	game:GetService("VirtualUser"):Button2Up(Vector2.new(0,0), workspace.CurrentCamera.CFrame)
 end)
+
+-- ✅ 6. Mensajes aleatorios al chat cada 6 segundos
+local tablaMensajes = {
+	"Soy el mejor B)",
+	"Farm time 😎",
+	"Yo ni me muevo y gano jaja",
+	"¿Dónde están los malos?",
+	"No pueden contra mí >:)",
+	"Esto es automático papá",
+	"Me encanta este juego B)",
+	"Quiero más poder 🔥"
+}
+
+spawn(function()
+	while true do
+		task.wait(10)
+		local mensaje = tablaMensajes[math.random(1, #tablaMensajes)]
+		pcall(function()
+			game:GetService("ReplicatedStorage").DefaultChatSystemChatEvents.SayMessageRequest:FireServer(mensaje, "All")
+		end)
+	end
+end)
+
+-- UI mensaje
+Section:NewLabel("Script activo: Punch, TP, AntiKnockback, NoClip, AntiAFK, Chat spam")
 
 Section:NewLabel("Script activo: Rapid Punch, FarmZone, AntiKnockback, NoClip, AntiAFK")
