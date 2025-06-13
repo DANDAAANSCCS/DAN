@@ -1,6 +1,6 @@
 -- Cargar UI
 local Library = loadstring(game:HttpGet("https://raw.githubusercontent.com/xHeptc/Kavo-UI-Library/main/source.lua"))()
-local Window = Library.CreateLib("Auto TP Loop por Chat + Auto Chat", "Ocean")
+local Window = Library.CreateLib("Auto TP Loop por Chat", "Ocean")
 
 local MainTab = Window:NewTab("Main")
 local MainSection = MainTab:NewSection("Todo activo automáticamente")
@@ -9,107 +9,76 @@ local Players = game:GetService("Players")
 local player = Players.LocalPlayer
 local objetivoNombre = ""
 
--- Conectarse al evento Chatted de todos los jugadores (incluidos nuevos)
-local function conectarJugador(jugador)
-    if jugador == player then return end
-    jugador.Chatted:Connect(function(msg)
-        objetivoNombre = jugador.Name
-    end)
-end
+-- ✅ Detectar mensajes del chat, incluso los enviados por scripts
+local ChatService = game:GetService("ReplicatedStorage"):WaitForChild("DefaultChatSystemChatEvents")
 
--- Conectar a todos los jugadores actuales
-for _, v in pairs(Players:GetPlayers()) do
-    conectarJugador(v)
-end
-
--- Conectar a nuevos jugadores que se unan
-Players.PlayerAdded:Connect(conectarJugador)
+ChatService.OnMessageDoneFiltering.OnClientEvent:Connect(function(messageData)
+	local sender = messageData.FromSpeaker
+	if sender and sender ~= player.Name then
+		objetivoNombre = sender
+	end
+end)
 
 -- ✅ Anti-AFK
-for _, v in pairs(getconnections(player.Idled)) do
-    v:Disable()
-end
+for _, v in pairs(getconnections(player.Idled)) do v:Disable() end
 player.Idled:Connect(function()
-    game:GetService("VirtualUser"):Button2Down(Vector2.new(), workspace.CurrentCamera.CFrame)
-    wait(1)
-    game:GetService("VirtualUser"):Button2Up(Vector2.new(), workspace.CurrentCamera.CFrame)
+	game:GetService("VirtualUser"):Button2Down(Vector2.new(), workspace.CurrentCamera.CFrame)
+	wait(1)
+	game:GetService("VirtualUser"):Button2Up(Vector2.new(), workspace.CurrentCamera.CFrame)
 end)
 
 -- ✅ No Clip permanente
 game:GetService("RunService").Stepped:Connect(function()
-    local char = player.Character
-    if char then
-        for _, part in pairs(char:GetDescendants()) do
-            if part:IsA("BasePart") then
-                part.CanCollide = false
-            end
-        end
-    end
+	local char = player.Character
+	if char then
+		for _, part in pairs(char:GetDescendants()) do
+			if part:IsA("BasePart") then
+				part.CanCollide = false
+			end
+		end
+	end
 end)
 
 -- ✅ Anti-Knockback
 local LastPosition = nil
 spawn(function()
-    while true do
-        task.wait()
-        local char = player.Character
-        if char and char:FindFirstChild("HumanoidRootPart") then
-            local root = char.HumanoidRootPart
-            if root.AssemblyLinearVelocity.Magnitude > 250 or root.AssemblyAngularVelocity.Magnitude > 250 then
-                root.AssemblyLinearVelocity = Vector3.zero
-                root.AssemblyAngularVelocity = Vector3.zero
-                if LastPosition then
-                    root.CFrame = LastPosition
-                end
-            elseif root.AssemblyLinearVelocity.Magnitude < 50 then
-                LastPosition = root.CFrame
-            end
-        end
-    end
+	while true do
+		task.wait()
+		local char = player.Character
+		if char and char:FindFirstChild("HumanoidRootPart") then
+			local root = char.HumanoidRootPart
+			if root.AssemblyLinearVelocity.Magnitude > 250 or root.AssemblyAngularVelocity.Magnitude > 250 then
+				root.AssemblyLinearVelocity = Vector3.zero
+				root.AssemblyAngularVelocity = Vector3.zero
+				if LastPosition then
+					root.CFrame = LastPosition
+				end
+			elseif root.AssemblyLinearVelocity.Magnitude < 50 then
+				LastPosition = root.CFrame
+			end
+		end
+	end
 end)
 
--- ✅ TP loop hacia el último jugador que habló (posición detrás)
+-- ✅ TP loop detrás del último jugador que habló (real o por script)
 spawn(function()
-    while true do
-        wait(0.5)
-        pcall(function()
-            if objetivoNombre == "" then return end
-            local objetivo = Players:FindFirstChild(objetivoNombre)
-            local myChar = player.Character
-            if objetivo and objetivo.Character and myChar then
-                local myRoot = myChar:FindFirstChild("HumanoidRootPart")
-                local objRoot = objetivo.Character:FindFirstChild("HumanoidRootPart")
-                if myRoot and objRoot then
-                    local atras = objRoot.CFrame.LookVector * -2
-                    myRoot.CFrame = objRoot.CFrame + atras
-                end
-            end
-        end)
-    end
+	while true do
+		wait(0.5)
+		pcall(function()
+			if objetivoNombre == "" then return end
+			local objetivo = Players:FindFirstChild(objetivoNombre)
+			local miChar = player.Character
+			if objetivo and objetivo.Character and miChar then
+				local miRoot = miChar:FindFirstChild("HumanoidRootPart")
+				local objRoot = objetivo.Character:FindFirstChild("HumanoidRootPart")
+				if miRoot and objRoot then
+					local atras = objRoot.CFrame.LookVector * -2
+					miRoot.CFrame = objRoot.CFrame + atras
+				end
+			end
+		end)
+	end
 end)
 
--- ✅ Envío de mensajes automáticos al chat cada 60 segundos
-local mensajesAuto = {
-    "¿Quién quiere pelear? 😈",
-    "Estoy viendo todo B)",
-    "No huyas jaja",
-    "Aquí farm tranquilo...",
-    "¿Y mis poderes? 🤔",
-    "¿Quién fue el que habló?",
-    "Voy por ti 👀",
-    "No pueden escapar de mí"
-}
-
-spawn(function()
-    while true do
-        task.wait(60)
-        local mensaje = mensajesAuto[math.random(1, #mensajesAuto)]
-        pcall(function()
-            game:GetService("ReplicatedStorage").DefaultChatSystemChatEvents.SayMessageRequest:FireServer(mensaje, "All")
-        end)
-    end
-end)
-
--- Info en UI
-MainSection:NewLabel("TP Loop + NoClip + AntiKB + AntiAFK + Auto Chat 60s")
+MainSection:NewLabel("TP Loop al último que habló (incluso scripts)")
 
