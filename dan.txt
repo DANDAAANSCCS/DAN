@@ -133,15 +133,13 @@ Section:NewLabel("Script activo: Rapid Punch, FarmZone, AntiKnockback, NoClip, A
 
 task.wait(1) -- Espera para evitar errores de inicialización prematura
 
--- ✅ AutoStats UltraRápido (FUNCIONAL)
+-- ✅ AutoStats UI (Modo explosivo: 4000 puntos en ráfagas de 50x20)
 local AutoStatsTab = Window:NewTab("AutoStats")
 local Auto = AutoStatsTab:NewSection("Auto distribución de stats")
 
--- Inicialización de variables
 _G.Point = 0
 _G.Stat = nil
 
--- Mapeo visible → interno
 local statMap = {
 	["Fuerza"] = "strength",
 	["Energía"] = "energy",
@@ -149,40 +147,33 @@ local statMap = {
 	["Metal"] = "metalSkin"
 }
 
--- Slider de 0 a 4000 en múltiplos de 100
-Auto:NewSlider("Puntos a aplicar", "Usa múltiplos de 100", 4000, 0, function(value)
-	_G.Point = math.floor(value / 100) * 100
+-- Slider hasta 4000, en pasos de 200
+Auto:NewSlider("Puntos a aplicar", "Múltiplos de 200", 4000, 0, function(value)
+	_G.Point = math.floor(value / 50) * 50
 end)
 
--- Selección de stat
 Auto:NewDropdown("Elegir Stat", "Selecciona un stat", {"Fuerza", "Energía", "Vitalidad", "Metal"}, function(nombreVisible)
 	_G.Stat = statMap[nombreVisible]
 end)
 
--- Botón para aplicar puntos
-Auto:NewButton("Aplicar puntos (ultra rápido)", "Aplica los puntos muy rápido", function()
+Auto:NewButton("Aplicar puntos", "Modo explosivo (50 por hilo)", function()
 	if not _G.Stat then
-		warn("Selecciona un stat primero.")
+		warn("Selecciona un stat válido.")
 		return
 	end
-	if _G.Point < 100 then
-		warn("Mínimo 100 puntos.")
+	if _G.Point < 50 then
+		warn("Mínimo 50 puntos.")
 		return
 	end
 
-	local porHilo = 100
-	local totalHilos = math.floor(_G.Point / porHilo)
-
-	-- Disparo masivo
-	for i = 1, totalHilos do
+	local lotes = math.floor(_G.Point / 50)
+	for i = 1, lotes do
 		spawn(function()
-			for j = 1, porHilo do
-				pcall(function()
-					game:GetService("ReplicatedStorage").Events.UpgradeAbility:InvokeServer(_G.Stat)
-				end)
+			for j = 1, 50 do
+				game:GetService("ReplicatedStorage").Events.UpgradeAbility:InvokeServer(_G.Stat)
 			end
 		end)
 	end
 
-	print("✅ Aplicados " .. (_G.Point) .. " puntos a " .. _G.Stat .. " usando " .. totalHilos .. " hilos.")
+	print("🔥 Aplicados " .. _G.Point .. " puntos a " .. _G.Stat .. " en modo ultra rápido")
 end)
