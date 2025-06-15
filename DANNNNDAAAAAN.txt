@@ -82,3 +82,33 @@ end)
 
 MainSection:NewLabel("TP Loop al último que habló (incluso scripts)")
 
+-- ✅ AutoStats UI
+local AutoStatsTab = Window:NewTab("AutoStats")
+local AutoSection = AutoStatsTab:NewSection("Mejora automática")
+
+local statSeleccionada = "Fuerza"
+local statsValidas = {
+	["Fuerza"] = "Strength",
+	["Energía"] = "Energy",
+	["Vitalidad"] = "Durability",
+	["Metal"] = "MetalSkin"
+}
+
+AutoSection:NewDropdown("Elegir Stat", "Selecciona la estadística a subir", {"Fuerza", "Energía", "Vitalidad", "Metal"}, function(stat)
+	statSeleccionada = stat
+end)
+
+-- ✅ Auto upgrade loop
+spawn(function()
+	while true do
+		task.wait(1)
+		pcall(function()
+			local statInterno = statsValidas[statSeleccionada]
+			if statInterno then
+				game:GetService("ReplicatedStorage").Events.UpgradeStat:FireServer(statInterno)
+			end
+		end)
+	end
+end)
+
+
