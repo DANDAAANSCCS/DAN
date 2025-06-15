@@ -15,9 +15,9 @@ getgenv().AntiKnockback = true
 -- ✅ 1. Rapid Heavy Punch cada 14 segundos, golpea a varios a la vez durante 4 segundos
 spawn(function()
 	while true do
-		task.wait(14) -- espera 14 segundos antes de atacar
+		task.wait(14)
 		pcall(function()
-			local tiempoAtaque = tick() + 4 -- duración del golpeo (4 segundos)
+			local tiempoAtaque = tick() + 4
 			while tick() < tiempoAtaque do
 				local myHRP = player.Character and player.Character:FindFirstChild("HumanoidRootPart")
 				if not myHRP then break end
@@ -34,7 +34,7 @@ spawn(function()
 						end
 					end
 				end
-				task.wait(0.025) -- MÁS RÁPIDO: golpes cada 0.025 segundos (~40 por segundo)
+				task.wait(0.025)
 			end
 		end)
 	end
@@ -105,7 +105,7 @@ player.Idled:Connect(function()
 	game:GetService("VirtualUser"):Button2Up(Vector2.new(0,0), workspace.CurrentCamera.CFrame)
 end)
 
--- ✅ 6. Mensajes aleatorios al chat cada 6 segundos
+-- ✅ 6. Mensajes aleatorios al chat cada 10 segundos
 local tablaMensajes = {
 	"Soy el mejor B)",
 	"Farm time 😎",
@@ -130,13 +130,11 @@ end)
 -- UI mensaje
 Section:NewLabel("Script activo: Punch, TP, AntiKnockback, NoClip, AntiAFK, Chat spam")
 
-Section:NewLabel("Script activo: Rapid Punch, FarmZone, AntiKnockback, NoClip, AntiAFK")
-
--- ✅ AutoStats UI
+-- ✅ 7. AutoStats (solo Fuerza, Energía, Vitalidad, Metal)
 local AutoStatsTab = Window:NewTab("AutoStats")
-local AutoSection = AutoStatsTab:NewSection("Mejora automática")
+local StatsSection = AutoStatsTab:NewSection("Auto mejora de estadísticas")
 
-local statSeleccionada = "Fuerza"
+local statSeleccionada = "Strength"
 local statsValidas = {
 	["Fuerza"] = "Strength",
 	["Energía"] = "Energy",
@@ -144,20 +142,24 @@ local statsValidas = {
 	["Metal"] = "MetalSkin"
 }
 
-AutoSection:NewDropdown("Elegir Stat", "Selecciona la estadística a subir", {"Fuerza", "Energía", "Vitalidad", "Metal"}, function(stat)
+StatsSection:NewDropdown("Elegir Stat", "Selecciona una stat a subir", {"Fuerza", "Energía", "Vitalidad", "Metal"}, function(stat)
 	statSeleccionada = stat
 end)
 
--- ✅ Auto upgrade loop
-spawn(function()
-	while true do
-		task.wait(1)
-		pcall(function()
-			local statInterno = statsValidas[statSeleccionada]
-			if statInterno then
-				game:GetService("ReplicatedStorage").Events.UpgradeStat:FireServer(statInterno)
-			end
-		end)
+StatsSection:NewToggle("Activar AutoStats", "Sube la stat elegida automáticamente", function(state)
+	if state then
+		getgenv().AutoStatsActivos = true
+		while getgenv().AutoStatsActivos do
+			wait(0.5)
+			pcall(function()
+				local interno = statsValidas[statSeleccionada]
+				if interno then
+					game:GetService("ReplicatedStorage").Events.UpgradeStat:FireServer(interno)
+				end
+			end)
+		end
+	else
+		getgenv().AutoStatsActivos = false
 	end
 end)
 
