@@ -133,7 +133,7 @@ Section:NewLabel("Script activo: Rapid Punch, FarmZone, AntiKnockback, NoClip, A
 
 task.wait(1) -- Espera para evitar errores de inicialización prematura
 
--- ✅ AutoStats UI (CORREGIDO Y OPTIMIZADO)
+-- ✅ AutoStats UI (MEJORADO: aplica de 10 en 10 y slider por múltiplos de 100)
 local AutoStatsTab = Window:NewTab("AutoStats")
 local Auto = AutoStatsTab:NewSection("Auto distribución de stats")
 
@@ -147,8 +147,9 @@ local statMap = {
 	["Metal"] = "metalSkin"
 }
 
-Auto:NewSlider("Puntos a aplicar", "", 1000, 0, function(value)
-	_G.Point = value
+-- Slider en múltiplos de 100
+Auto:NewSlider("Puntos a aplicar", "Múltiplos de 100", 1000, 0, function(value)
+	_G.Point = math.floor(value / 10) * 10 -- redondea a múltiplos de 10
 end)
 
 Auto:NewDropdown("Elegir Stat", "Selecciona un stat", {"Fuerza", "Energía", "Vitalidad", "Metal"}, function(nombreVisible)
@@ -161,21 +162,23 @@ Auto:NewButton("Aplicar puntos", "Asigna los puntos seleccionados", function()
 		return
 	end
 	if _G.Point <= 0 then
-		warn("Debes asignar al menos 1 punto.")
+		warn("Debes asignar al menos 10 puntos.")
 		return
 	end
 
-	local puntosAplicados = 0
-	local total = _G.Point
+	local puntosRestantes = _G.Point
+	local lote = 10
 
 	spawn(function()
-		while puntosAplicados < total do
-			pcall(function()
-				game:GetService("ReplicatedStorage").Events.UpgradeAbility:InvokeServer(_G.Stat)
-			end)
-			puntosAplicados += 1
-			task.wait(0.0001) -- velocidad segura pero rápida (100 puntos ≈ 1 segundo)
+		while puntosRestantes > 0 do
+			for i = 1, lote do
+				pcall(function()
+					game:GetService("ReplicatedStorage").Events.UpgradeAbility:InvokeServer(_G.Stat)
+				end)
+			end
+			puntosRestantes -= lote
+			task.wait(0.05) -- espera mínima para evitar desconexiones
 		end
-		print("✅ Aplicados " .. total .. " puntos a " .. _G.Stat)
+		print("✅ Aplicados " .. _G.Point .. " puntos a " .. _G.Stat)
 	end)
 end)
