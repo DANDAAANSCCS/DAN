@@ -105,15 +105,18 @@ Auto:NewDropdown("Elegir Stat", "Selecciona un stat", {"Fuerza", "Energía", "Vi
 end)
 
 Auto:NewButton("Aplicar puntos", "Asigna los puntos seleccionados", function()
-	if not _G.Stat then return end
-	if _G.Point <= 0 then
-		warn("Debes asignar al menos 1 punto.")
-		return
-	end
-	for i = 1, _G.Point do
-		spawn(function()
-			game:GetService("ReplicatedStorage").Events.UpgradeStat:FireServer(_G.Stat)
-		end)
-	end
-	print("✅ Aplicados " .. _G.Point .. " puntos a " .. _G.Stat)
+    if not _G.Stat then return end
+    if _G.Point <= 0 then
+        warn("Debes asignar al menos 1 punto.")
+        return
+    end
+    for i = 1, _G.Point do
+        spawn(function()
+            pcall(function()
+                game:GetService("ReplicatedStorage").Events.UpgradeAbility:InvokeServer(_G.Stat)
+            end)
+        end)
+        wait() -- evitar saturar el servidor
+    end
+    print("✅ Aplicados " .. _G.Point .. " puntos a " .. _G.Stat)
 end)
