@@ -174,7 +174,7 @@ Auto:NewButton("Aplicar puntos", "Asigna los puntos seleccionados", function()
 				game:GetService("ReplicatedStorage").Events.UpgradeAbility:InvokeServer(_G.Stat)
 			end)
 			puntosAplicados += 1
-			task.wait(0.01) -- velocidad segura pero rápida (100 puntos ≈ 1 segundo)
+			task.wait(0.0001) -- velocidad segura pero rápida (100 puntos ≈ 1 segundo)
 		end
 		print("✅ Aplicados " .. total .. " puntos a " .. _G.Stat)
 	end)
