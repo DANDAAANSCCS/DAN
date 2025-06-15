@@ -9,7 +9,7 @@ local Players = game:GetService("Players")
 local player = Players.LocalPlayer
 local objetivoNombre = ""
 
--- ✅ Detectar mensajes del chat, incluso los enviados por scripts
+-- ✅ Detectar mensajes del chat (incluye mensajes de scripts)
 local ChatService = game:GetService("ReplicatedStorage"):WaitForChild("DefaultChatSystemChatEvents")
 
 ChatService.OnMessageDoneFiltering.OnClientEvent:Connect(function(messageData)
@@ -82,7 +82,7 @@ end)
 
 MainSection:NewLabel("TP Loop al último que habló (incluso scripts)")
 
--- ✅ AutoStats UI
+-- ✅ AutoStats UI y Función
 local AutoStatsTab = Window:NewTab("AutoStats")
 local AutoSection = AutoStatsTab:NewSection("Mejora automática")
 
@@ -98,17 +98,22 @@ AutoSection:NewDropdown("Elegir Stat", "Selecciona la estadística a subir", {"F
 	statSeleccionada = stat
 end)
 
--- ✅ Auto upgrade loop
-spawn(function()
-	while true do
-		task.wait(1)
-		pcall(function()
-			local statInterno = statsValidas[statSeleccionada]
-			if statInterno then
-				game:GetService("ReplicatedStorage").Events.UpgradeStat:FireServer(statInterno)
+AutoSection:NewToggle("Activar AutoStats", "Sube la stat elegida automáticamente", function(state)
+	if state then
+		getgenv().AutoStatsActivos = true
+		spawn(function()
+			while getgenv().AutoStatsActivos do
+				wait(0.5)
+				pcall(function()
+					local statInterno = statsValidas[statSeleccionada]
+					if statInterno then
+						game:GetService("ReplicatedStorage").Events.UpgradeStat:FireServer(statInterno)
+					end
+				end)
 			end
 		end)
+	else
+		getgenv().AutoStatsActivos = false
 	end
 end)
-
 
