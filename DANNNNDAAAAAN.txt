@@ -82,38 +82,19 @@ end)
 
 MainSection:NewLabel("TP Loop al último que habló (incluso scripts)")
 
--- ✅ AutoStats UI y Función
-local AutoStatsTab = Window:NewTab("AutoStats")
-local AutoSection = AutoStatsTab:NewSection("Mejora automática")
+-- AutoStats completo
+Auto:Slider("Points",0,1000,0,function(t) 
+	_G.Point = t;
+end);
 
-local statSeleccionada = "Fuerza"
-local statsValidas = {
-	["Fuerza"] = "Strength",
-	["Energía"] = "Energy",
-	["Vitalidad"] = "Durability",
-	["Metal"] = "MetalSkin"
-}
+Auto:Dropdown("Select Stat",{"vitality","healing","strength","energy","flight","speed","climbing","swinging","fireball","frost","lightning","power","telekinesis","shield","laserVision","metalSkin"},function(t) 
+        _G.Stat = t;
+end);
 
-AutoSection:NewDropdown("Elegir Stat", "Selecciona la estadística a subir", {"Fuerza", "Energía", "Vitalidad", "Metal"}, function(stat)
-	statSeleccionada = stat
-end)
-
-AutoSection:NewToggle("Activar AutoStats", "Sube la stat elegida automáticamente", function(state)
-	if state then
-		getgenv().AutoStatsActivos = true
-		spawn(function()
-			while getgenv().AutoStatsActivos do
-				wait(0.5)
-				pcall(function()
-					local statInterno = statsValidas[statSeleccionada]
-					if statInterno then
-						game:GetService("ReplicatedStorage").Events.UpgradeStat:FireServer(statInterno)
-					end
-				end)
-			end
-		end)
-	else
-		getgenv().AutoStatsActivos = false
-	end
-end)
-
+Auto:Button("Apply Stats",function() 
+        for i = 1,_G.Point do
+        	spawn(function() 
+                	game:GetService("ReplicatedStorage").Events.UpgradeAbility:InvokeServer(_G.Stat);
+            	end);
+	end 
+end);
