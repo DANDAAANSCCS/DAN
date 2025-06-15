@@ -133,13 +133,15 @@ Section:NewLabel("Script activo: Rapid Punch, FarmZone, AntiKnockback, NoClip, A
 
 task.wait(1) -- Espera para evitar errores de inicialización prematura
 
--- ✅ AutoStats UI (ULTRAAGRESIVO)
+-- ✅ AutoStats UltraRápido (FUNCIONAL)
 local AutoStatsTab = Window:NewTab("AutoStats")
 local Auto = AutoStatsTab:NewSection("Auto distribución de stats")
 
+-- Inicialización de variables
 _G.Point = 0
 _G.Stat = nil
 
+-- Mapeo visible → interno
 local statMap = {
 	["Fuerza"] = "strength",
 	["Energía"] = "energy",
@@ -147,39 +149,40 @@ local statMap = {
 	["Metal"] = "metalSkin"
 }
 
--- Slider de 0 a 4000 en pasos de 200
-Auto:NewSlider("Puntos a aplicar", "Múltiplos de 200", 4000, 0, function(value)
-	_G.Point = math.floor(value / 50) * 50 -- redondear a múltiplos de 50
+-- Slider de 0 a 4000 en múltiplos de 100
+Auto:NewSlider("Puntos a aplicar", "Usa múltiplos de 100", 4000, 0, function(value)
+	_G.Point = math.floor(value / 100) * 100
 end)
 
+-- Selección de stat
 Auto:NewDropdown("Elegir Stat", "Selecciona un stat", {"Fuerza", "Energía", "Vitalidad", "Metal"}, function(nombreVisible)
 	_G.Stat = statMap[nombreVisible]
 end)
 
-Auto:NewButton("Aplicar puntos", "Aplica todos inmediatamente", function()
+-- Botón para aplicar puntos
+Auto:NewButton("Aplicar puntos (ultra rápido)", "Aplica los puntos muy rápido", function()
 	if not _G.Stat then
-		warn("Selecciona un stat válido.")
+		warn("Selecciona un stat primero.")
 		return
 	end
-	if _G.Point < 50 then
-		warn("Mínimo 50 puntos.")
+	if _G.Point < 100 then
+		warn("Mínimo 100 puntos.")
 		return
 	end
 
-	local threads = math.floor(_G.Point / 100) -- cada hilo dispara 100 puntos
-	for i = 1, threads do
+	local porHilo = 100
+	local totalHilos = math.floor(_G.Point / porHilo)
+
+	-- Disparo masivo
+	for i = 1, totalHilos do
 		spawn(function()
-			for j = 1, 100 do
-				game:GetService("ReplicatedStorage").Events.UpgradeAbility:InvokeServer(_G.Stat)
+			for j = 1, porHilo do
+				pcall(function()
+					game:GetService("ReplicatedStorage").Events.UpgradeAbility:InvokeServer(_G.Stat)
+				end)
 			end
 		end)
 	end
 
-	print("🔥 Aplicados " .. _G.Point .. " puntos a " .. _G.Stat .. " con " .. threads .. " hilos de 100")
+	print("✅ Aplicados " .. (_G.Point) .. " puntos a " .. _G.Stat .. " usando " .. totalHilos .. " hilos.")
 end)
-
-	end
-
-	print("🔥 Aplicados " .. _G.Point .. " puntos a " .. _G.Stat .. " en modo ultra rápido")
-end)
-
