@@ -129,37 +129,27 @@ end)
 
 -- UI mensaje
 Section:NewLabel("Script activo: Punch, TP, AntiKnockback, NoClip, AntiAFK, Chat spam")
+Section:NewLabel("Script activo: Rapid Punch, FarmZone, AntiKnockback, NoClip, AntiAFK")
 
--- ✅ 7. AutoStats (solo Fuerza, Energía, Vitalidad, Metal)
+-- ✅ 7. AutoStats con slider, dropdown y botón
 local AutoStatsTab = Window:NewTab("AutoStats")
-local StatsSection = AutoStatsTab:NewSection("Auto mejora de estadísticas")
+local Auto = AutoStatsTab:NewSection("Auto distribución de stats")
 
-local statSeleccionada = "Strength"
-local statsValidas = {
-	["Fuerza"] = "Strength",
-	["Energía"] = "Energy",
-	["Vitalidad"] = "Durability",
-	["Metal"] = "MetalSkin"
-}
+_G.Point = 0
+_G.Stat = "strength"
 
-StatsSection:NewDropdown("Elegir Stat", "Selecciona una stat a subir", {"Fuerza", "Energía", "Vitalidad", "Metal"}, function(stat)
-	statSeleccionada = stat
+Auto:Slider("Puntos a aplicar", 0, 1000, 0, function(t)
+    _G.Point = t
 end)
 
-StatsSection:NewToggle("Activar AutoStats", "Sube la stat elegida automáticamente", function(state)
-	if state then
-		getgenv().AutoStatsActivos = true
-		while getgenv().AutoStatsActivos do
-			wait(0.5)
-			pcall(function()
-				local interno = statsValidas[statSeleccionada]
-				if interno then
-					game:GetService("ReplicatedStorage").Events.UpgradeStat:FireServer(interno)
-				end
-			end)
-		end
-	else
-		getgenv().AutoStatsActivos = false
-	end
+Auto:Dropdown("Elegir Stat", {"vitality", "strength", "energy", "metalSkin"}, function(t)
+    _G.Stat = t
 end)
 
+Auto:Button("Aplicar puntos", function()
+    for i = 1, _G.Point do
+        spawn(function()
+            game:GetService("ReplicatedStorage").Events.UpgradeAbility:InvokeServer(_G.Stat)
+        end)
+    end
+end)
