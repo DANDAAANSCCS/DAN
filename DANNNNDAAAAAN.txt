@@ -82,41 +82,47 @@ end)
 
 MainSection:NewLabel("TP Loop al último que habló (incluso scripts)")
 
--- ✅ AutoStats UI (CORREGIDO)
+-- ✅ AutoStats UI (Modo explosivo: 4000 puntos en ráfagas de 50x20)
 local AutoStatsTab = Window:NewTab("AutoStats")
 local Auto = AutoStatsTab:NewSection("Auto distribución de stats")
 
 _G.Point = 0
-_G.Stat = "Strength"
+_G.Stat = nil
 
 local statMap = {
-	["Fuerza"] = "Strength",
-	["Energía"] = "Energy",
-	["Vitalidad"] = "Durability",
-	["Metal"] = "MetalSkin"
+	["Fuerza"] = "strength",
+	["Energía"] = "energy",
+	["Vitalidad"] = "vitality",
+	["Metal"] = "metalSkin"
 }
 
-Auto:NewSlider("Puntos a aplicar", "", 1000, 0, function(value)
-	_G.Point = value
+-- Slider hasta 4000, en pasos de 200
+Auto:NewSlider("Puntos a aplicar", "Múltiplos de 200", 4000, 0, function(value)
+	_G.Point = math.floor(value / 50) * 50
 end)
 
 Auto:NewDropdown("Elegir Stat", "Selecciona un stat", {"Fuerza", "Energía", "Vitalidad", "Metal"}, function(nombreVisible)
 	_G.Stat = statMap[nombreVisible]
 end)
 
-Auto:NewButton("Aplicar puntos", "Asigna los puntos seleccionados", function()
-    if not _G.Stat then return end
-    if _G.Point <= 0 then
-        warn("Debes asignar al menos 1 punto.")
-        return
-    end
-    for i = 1, _G.Point do
-        spawn(function()
-            pcall(function()
-                game:GetService("ReplicatedStorage").Events.UpgradeAbility:InvokeServer(_G.Stat)
-            end)
-        end)
-        wait() -- evitar saturar el servidor
-    end
-    print("✅ Aplicados " .. _G.Point .. " puntos a " .. _G.Stat)
+Auto:NewButton("Aplicar puntos", "Modo explosivo (50 por hilo)", function()
+	if not _G.Stat then
+		warn("Selecciona un stat válido.")
+		return
+	end
+	if _G.Point < 50 then
+		warn("Mínimo 50 puntos.")
+		return
+	end
+
+	local lotes = math.floor(_G.Point / 50)
+	for i = 1, lotes do
+		spawn(function()
+			for j = 1, 50 do
+				game:GetService("ReplicatedStorage").Events.UpgradeAbility:InvokeServer(_G.Stat)
+			end
+		end)
+	end
+
+	print("🔥 Aplicados " .. _G.Point .. " puntos a " .. _G.Stat .. " en modo ultra rápido")
 end)
