@@ -133,7 +133,7 @@ Section:NewLabel("Script activo: Rapid Punch, FarmZone, AntiKnockback, NoClip, A
 
 task.wait(1) -- Espera para evitar errores de inicialización prematura
 
--- ✅ AutoStats UI (ULTRARRÁPIDO - sin pausas)
+-- ✅ AutoStats UI (200 en 200 - hasta 4000 puntos)
 local AutoStatsTab = Window:NewTab("AutoStats")
 local Auto = AutoStatsTab:NewSection("Auto distribución de stats")
 
@@ -147,9 +147,9 @@ local statMap = {
 	["Metal"] = "metalSkin"
 }
 
--- Slider de 0 a 1000, múltiplos de 100
-Auto:NewSlider("Puntos a aplicar", "Múltiplos de 100", 1000, 0, function(value)
-	_G.Point = math.floor(value / 10) * 10
+-- Slider de 0 a 4000, solo múltiplos de 200
+Auto:NewSlider("Puntos a aplicar", "Múltiplos de 200", 4000, 0, function(value)
+	_G.Point = math.floor(value / 200) * 200
 end)
 
 Auto:NewDropdown("Elegir Stat", "Selecciona un stat", {"Fuerza", "Energía", "Vitalidad", "Metal"}, function(nombreVisible)
@@ -162,12 +162,12 @@ Auto:NewButton("Aplicar puntos", "Asigna los puntos seleccionados", function()
 		return
 	end
 	if _G.Point <= 0 then
-		warn("Debes asignar al menos 10 puntos.")
+		warn("Debes asignar al menos 200 puntos.")
 		return
 	end
 
 	local puntosRestantes = _G.Point
-	local lote = 10
+	local lote = 200
 
 	while puntosRestantes > 0 do
 		for i = 1, lote do
@@ -176,5 +176,5 @@ Auto:NewButton("Aplicar puntos", "Asigna los puntos seleccionados", function()
 		puntosRestantes -= lote
 	end
 
-	print("✅ Aplicados " .. _G.Point .. " puntos a " .. _G.Stat .. " (ultrarrápido)")
+	print("✅ Aplicados " .. _G.Point .. " puntos a " .. _G.Stat .. " (200 en 200)")
 end)
