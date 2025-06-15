@@ -131,38 +131,47 @@ end)
 Section:NewLabel("Script activo: Punch, TP, AntiKnockback, NoClip, AntiAFK, Chat spam")
 Section:NewLabel("Script activo: Rapid Punch, FarmZone, AntiKnockback, NoClip, AntiAFK")
 
--- ✅ 7. AutoStats con slider, dropdown y botón (CORREGIDO)
+task.wait(1) -- Espera para evitar errores de inicialización prematura
+
+-- ✅ 7. AutoStats con slider, dropdown y botón (CORREGIDO Y ESTABLE)
 local AutoStatsTab = Window:NewTab("AutoStats")
-local Auto = AutoStatsTab:NewSection("Auto distribución de stats")
+task.wait(0.2) -- Pequeña pausa adicional para asegurar renderizado
 
-_G.Point = 0
-_G.Stat = nil
+if AutoStatsTab then
+    local Auto = AutoStatsTab:NewSection("Auto distribución de stats")
 
-Auto:Slider("Puntos a aplicar", 0, 1000, 0, function(t)
-    _G.Point = t
-end)
+    _G.Point = 0
+    _G.Stat = nil
 
-Auto:Dropdown("Elegir Stat", {"vitality", "strength", "energy", "metalSkin"}, function(t)
-    _G.Stat = t
-end)
+    Auto:Slider("Puntos a aplicar", 0, 1000, 0, function(t)
+        _G.Point = t
+    end)
 
-Auto:Button("Aplicar puntos", function()
-    if not _G.Stat then
-        warn("Selecciona un stat antes de aplicar puntos.")
-        return
-    end
-    if _G.Point <= 0 then
-        warn("Asigna al menos 1 punto.")
-        return
-    end
-    for i = 1, _G.Point do
-        spawn(function()
-            pcall(function()
-                game:GetService("ReplicatedStorage").Events.UpgradeAbility:InvokeServer(_G.Stat)
+    Auto:Dropdown("Elegir Stat", {"vitality", "strength", "energy", "metalSkin"}, function(t)
+        _G.Stat = t
+    end)
+
+    Auto:Button("Aplicar puntos", function()
+        if not _G.Stat then
+            warn("Selecciona un stat antes de aplicar puntos.")
+            return
+        end
+        if _G.Point <= 0 then
+            warn("Asigna al menos 1 punto.")
+            return
+        end
+        for i = 1, _G.Point do
+            spawn(function()
+                pcall(function()
+                    game:GetService("ReplicatedStorage").Events.UpgradeAbility:InvokeServer(_G.Stat)
+                end)
             end)
-        end)
-        task.wait()
-    end
-    print("✅ Aplicados " .. _G.Point .. " puntos a " .. _G.Stat)
-end)
+            task.wait()
+        end
+        print("✅ Aplicados " .. _G.Point .. " puntos a " .. _G.Stat)
+    end)
+else
+    warn("❌ Error al crear la pestaña AutoStats. Revisa la definición de UI.")
+end
+
 
