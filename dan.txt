@@ -15,7 +15,7 @@ getgenv().AntiKnockback = true
 -- ✅ 1. Rapid Heavy Punch cada 14 segundos, golpea a varios a la vez durante 4 segundos
 spawn(function()
 	while true do
-		task.wait(14)
+		task.wait(12)
 		pcall(function()
 			local tiempoAtaque = tick() + 4
 			while tick() < tiempoAtaque do
