@@ -177,3 +177,24 @@ Auto:NewButton("Aplicar puntos", "Modo explosivo (50 por hilo)", function()
 
 	print("🔥 Aplicados " .. _G.Point .. " puntos a " .. _G.Stat .. " en modo ultra rápido")
 end)
+
+-- ✅ Recolector automático de orbes de experiencia (1 por segundo)
+getgenv().AutoCollectOrbs = true
+
+spawn(function()
+	while AutoCollectOrbs do
+		local player = game.Players.LocalPlayer
+		local head = player.Character and player.Character:FindFirstChild("Head")
+		if head then
+			for _, orb in pairs(workspace:WaitForChild("ExperienceOrbs"):GetDescendants()) do
+				if orb:IsA("BasePart") and orb:FindFirstChild("TouchInterest") then
+					pcall(function()
+						firetouchinterest(head, orb, 0)
+					end)
+					break -- solo 1 por segundo
+				end
+			end
+		end
+		task.wait(1)
+	end
+end)
