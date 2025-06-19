@@ -33,32 +33,30 @@ local player = game.Players.LocalPlayer
 
 RunService.Stepped:Connect(function()
 	local character = player.Character
-	if character then
-		for _, part in pairs(character:GetDescendants()) do
-			if part:IsA("BasePart") then
-				part.CanCollide = false
-				part.CastShadow = false
-			end
-		end
+	if not character then return end
 
-		local hrp = character:FindFirstChild("HumanoidRootPart")
-		if hrp then
-			-- Corrige empujes indeseados
-			if hrp.AssemblyLinearVelocity.Y > 4 then
-				-- Detener impulso hacia arriba si es excesivo
-				hrp.AssemblyLinearVelocity = Vector3.new(
-					hrp.AssemblyLinearVelocity.X,
-					math.clamp(hrp.AssemblyLinearVelocity.Y, -2, 2),
-					hrp.AssemblyLinearVelocity.Z
-				)
-			end
-		end
+	local humanoid = character:FindFirstChildWhichIsA("Humanoid")
+	local root = character:FindFirstChild("HumanoidRootPart")
 
-		-- Evita físicas raras como salto infinito por choques
-		local humanoid = character:FindFirstChildWhichIsA("Humanoid")
-		if humanoid then
-			humanoid.PlatformStand = false
-			humanoid.Sit = false
+	for _, part in pairs(character:GetDescendants()) do
+		if part:IsA("BasePart") then
+			part.CanCollide = false
+			part.CastShadow = false
+		end
+	end
+
+	-- Evita estados físicos raros
+	if humanoid then
+		humanoid.PlatformStand = false
+		humanoid.Sit = false
+	end
+
+	-- Anti knockback hacia arriba
+	if root then
+		local vel = root.AssemblyLinearVelocity
+		if vel.Y > 5 then
+			-- Cortar el impulso vertical excesivo
+			root.AssemblyLinearVelocity = Vector3.new(vel.X, 0, vel.Z)
 		end
 	end
 end)
