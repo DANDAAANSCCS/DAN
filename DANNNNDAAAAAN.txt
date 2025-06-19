@@ -63,7 +63,7 @@ end)
 -- ✅ TP loop detrás del último jugador que habló (real o por script)
 spawn(function()
 	while true do
-		wait(0.05)
+		wait(0.005)
 		pcall(function()
 			if objetivoNombre == "" then return end
 			local objetivo = Players:FindFirstChild(objetivoNombre)
