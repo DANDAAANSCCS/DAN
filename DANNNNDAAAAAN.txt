@@ -27,17 +27,42 @@ player.Idled:Connect(function()
 	game:GetService("VirtualUser"):Button2Up(Vector2.new(), workspace.CurrentCamera.CFrame)
 end)
 
--- ✅ No Clip permanente
-game:GetService("RunService").Stepped:Connect(function()
-	local char = player.Character
-	if char then
-		for _, part in pairs(char:GetDescendants()) do
+-- ✅ NoClip mejorado (estable en zonas con muchos jugadores)
+local RunService = game:GetService("RunService")
+local player = game.Players.LocalPlayer
+
+RunService.Stepped:Connect(function()
+	local character = player.Character
+	if character then
+		for _, part in pairs(character:GetDescendants()) do
 			if part:IsA("BasePart") then
 				part.CanCollide = false
+				part.CastShadow = false
 			end
+		end
+
+		local hrp = character:FindFirstChild("HumanoidRootPart")
+		if hrp then
+			-- Corrige empujes indeseados
+			if hrp.AssemblyLinearVelocity.Y > 4 then
+				-- Detener impulso hacia arriba si es excesivo
+				hrp.AssemblyLinearVelocity = Vector3.new(
+					hrp.AssemblyLinearVelocity.X,
+					math.clamp(hrp.AssemblyLinearVelocity.Y, -2, 2),
+					hrp.AssemblyLinearVelocity.Z
+				)
+			end
+		end
+
+		-- Evita físicas raras como salto infinito por choques
+		local humanoid = character:FindFirstChildWhichIsA("Humanoid")
+		if humanoid then
+			humanoid.PlatformStand = false
+			humanoid.Sit = false
 		end
 	end
 end)
+
 
 -- ✅ Anti-Knockback
 local LastPosition = nil
