@@ -8,15 +8,34 @@ local MainSection = MainTab:NewSection("Todo activo automáticamente")
 local Players = game:GetService("Players")
 local player = Players.LocalPlayer
 local objetivoNombre = ""
+local direccionTP = "atras" -- Dirección inicial
+
+-- Lista de direcciones posibles
+local direcciones = {"atras", "adelante", "derecha", "izquierda"}
+
+-- Función para elegir dirección aleatoria
+local function elegirDireccion()
+	local nueva
+	repeat
+		nueva = direcciones[math.random(1, #direcciones)]
+	until nueva ~= direccionTP
+	direccionTP = nueva
+	print("📌 Nueva dirección de TP: " .. direccionTP)
+end
 
 -- ✅ Detectar mensajes del chat (incluso los enviados por script)
 local ChatService = game:GetService("ReplicatedStorage"):WaitForChild("DefaultChatSystemChatEvents")
-
 ChatService.OnMessageDoneFiltering.OnClientEvent:Connect(function(messageData)
 	local sender = messageData.FromSpeaker
 	if sender and sender ~= player.Name then
 		objetivoNombre = sender
 	end
+end)
+
+-- ✅ Elegir nueva dirección de TP al reaparecer
+player.CharacterAdded:Connect(function()
+	task.wait(1)
+	elegirDireccion()
 end)
 
 -- ✅ Anti-AFK
@@ -27,40 +46,17 @@ player.Idled:Connect(function()
 	game:GetService("VirtualUser"):Button2Up(Vector2.new(), workspace.CurrentCamera.CFrame)
 end)
 
--- ✅ NoClip mejorado (estable en zonas con muchos jugadores)
-local RunService = game:GetService("RunService")
-local player = game.Players.LocalPlayer
-
-RunService.Stepped:Connect(function()
-	local character = player.Character
-	if not character then return end
-
-	local humanoid = character:FindFirstChildWhichIsA("Humanoid")
-	local root = character:FindFirstChild("HumanoidRootPart")
-
-	for _, part in pairs(character:GetDescendants()) do
-		if part:IsA("BasePart") then
-			part.CanCollide = false
-			part.CastShadow = false
-		end
-	end
-
-	-- Evita estados físicos raros
-	if humanoid then
-		humanoid.PlatformStand = false
-		humanoid.Sit = false
-	end
-
-	-- Anti knockback hacia arriba
-	if root then
-		local vel = root.AssemblyLinearVelocity
-		if vel.Y > 5 then
-			-- Cortar el impulso vertical excesivo
-			root.AssemblyLinearVelocity = Vector3.new(vel.X, 0, vel.Z)
+-- ✅ No Clip permanente
+game:GetService("RunService").Stepped:Connect(function()
+	local char = player.Character
+	if char then
+		for _, part in pairs(char:GetDescendants()) do
+			if part:IsA("BasePart") then
+				part.CanCollide = false
+			end
 		end
 	end
 end)
-
 
 -- ✅ Anti-Knockback
 local LastPosition = nil
@@ -83,7 +79,7 @@ spawn(function()
 	end
 end)
 
--- ✅ TP loop detrás del último jugador que habló (real o por script)
+-- ✅ TP loop con dirección dinámica
 spawn(function()
 	while true do
 		wait(0.005)
@@ -95,15 +91,24 @@ spawn(function()
 				local miRoot = miChar:FindFirstChild("HumanoidRootPart")
 				local objRoot = objetivo.Character:FindFirstChild("HumanoidRootPart")
 				if miRoot and objRoot then
-					local atras = objRoot.CFrame.LookVector * -2
-					miRoot.CFrame = objRoot.CFrame + atras
+					local offset = Vector3.new()
+					if direccionTP == "atras" then
+						offset = -objRoot.CFrame.LookVector * 2
+					elseif direccionTP == "adelante" then
+						offset = objRoot.CFrame.LookVector * 2
+					elseif direccionTP == "derecha" then
+						offset = objRoot.CFrame.RightVector * 2
+					elseif direccionTP == "izquierda" then
+						offset = -objRoot.CFrame.RightVector * 2
+					end
+					miRoot.CFrame = objRoot.CFrame + offset
 				end
 			end
 		end)
 	end
 end)
 
-MainSection:NewLabel("TP Loop al último que habló (incluso scripts)")
+MainSection:NewLabel("TP Loop al último que habló (con rotación por muerte)")
 
 -- ✅ AutoStats UI (Modo explosivo: 4000 puntos en ráfagas de 50x20)
 local AutoStatsTab = Window:NewTab("AutoStats")
