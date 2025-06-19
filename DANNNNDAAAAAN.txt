@@ -8,12 +8,15 @@ local MainSection = MainTab:NewSection("Todo activo automáticamente")
 local Players = game:GetService("Players")
 local player = Players.LocalPlayer
 local objetivoNombre = ""
-local direccionTP = "atras" -- Dirección inicial
+local direccionTP = "atras"
 
--- Lista de direcciones posibles
-local direcciones = {"atras", "adelante", "derecha", "izquierda"}
+-- ✅ NUEVAS direcciones (8 total)
+local direcciones = {
+	"adelante", "atras", "derecha", "izquierda",
+	"diag_adel_der", "diag_adel_izq", "diag_atras_der", "diag_atras_izq"
+}
 
--- Función para elegir dirección aleatoria
+-- ✅ Elegir dirección aleatoria (distinta a la anterior)
 local function elegirDireccion()
 	local nueva
 	repeat
@@ -79,7 +82,7 @@ spawn(function()
 	end
 end)
 
--- ✅ TP loop con dirección dinámica
+-- ✅ TP loop con 8 direcciones posibles
 spawn(function()
 	while true do
 		wait(0.005)
@@ -92,15 +95,28 @@ spawn(function()
 				local objRoot = objetivo.Character:FindFirstChild("HumanoidRootPart")
 				if miRoot and objRoot then
 					local offset = Vector3.new()
+					local dir = objRoot.CFrame.LookVector
+					local right = objRoot.CFrame.RightVector
+					local distancia = 3 -- ← ligeramente más lejos
+
 					if direccionTP == "atras" then
-						offset = -objRoot.CFrame.LookVector * 2
+						offset = -dir * distancia
 					elseif direccionTP == "adelante" then
-						offset = objRoot.CFrame.LookVector * 2
+						offset = dir * distancia
 					elseif direccionTP == "derecha" then
-						offset = objRoot.CFrame.RightVector * 2
+						offset = right * distancia
 					elseif direccionTP == "izquierda" then
-						offset = -objRoot.CFrame.RightVector * 2
+						offset = -right * distancia
+					elseif direccionTP == "diag_adel_der" then
+						offset = (dir + right).Unit * distancia
+					elseif direccionTP == "diag_adel_izq" then
+						offset = (dir - right).Unit * distancia
+					elseif direccionTP == "diag_atras_der" then
+						offset = (-dir + right).Unit * distancia
+					elseif direccionTP == "diag_atras_izq" then
+						offset = (-dir - right).Unit * distancia
 					end
+
 					miRoot.CFrame = objRoot.CFrame + offset
 				end
 			end
@@ -108,7 +124,7 @@ spawn(function()
 	end
 end)
 
-MainSection:NewLabel("TP Loop al último que habló (con rotación por muerte)")
+MainSection:NewLabel("TP Loop con 8 direcciones (cambia al reaparecer)")
 
 -- ✅ AutoStats UI (Modo explosivo: 4000 puntos en ráfagas de 50x20)
 local AutoStatsTab = Window:NewTab("AutoStats")
