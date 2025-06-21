@@ -1,3 +1,4 @@
+-- Cargar UI
 local Library = loadstring(game:HttpGet("https://raw.githubusercontent.com/xHeptc/Kavo-UI-Library/main/source.lua"))()
 local Window = Library.CreateLib("Auto TP Loop por Chat", "Ocean")
 
@@ -9,22 +10,23 @@ local player = Players.LocalPlayer
 local objetivoNombre = ""
 local direccionTP = "atras"
 
--- direcciones de tp
+-- ✅ NUEVAS direcciones (8 total)
 local direcciones = {
 	"adelante", "atras", "derecha", "izquierda",
 	"diag_adel_der", "diag_adel_izq", "diag_atras_der", "diag_atras_izq"
 }
 
--- cambio de direccion
+-- ✅ Elegir dirección aleatoria (distinta a la anterior)
 local function elegirDireccion()
 	local nueva
 	repeat
 		nueva = direcciones[math.random(1, #direcciones)]
 	until nueva ~= direccionTP
 	direccionTP = nueva
+	print("📌 Nueva dirección de TP: " .. direccionTP)
 end
 
--- deteccion de chat
+-- ✅ Detectar mensajes del chat (incluso los enviados por script)
 local ChatService = game:GetService("ReplicatedStorage"):WaitForChild("DefaultChatSystemChatEvents")
 ChatService.OnMessageDoneFiltering.OnClientEvent:Connect(function(messageData)
 	local sender = messageData.FromSpeaker
@@ -33,13 +35,13 @@ ChatService.OnMessageDoneFiltering.OnClientEvent:Connect(function(messageData)
 	end
 end)
 
--- cambiar a otra direccion 
+-- ✅ Elegir nueva dirección de TP al reaparecer
 player.CharacterAdded:Connect(function()
 	task.wait(1)
 	elegirDireccion()
 end)
 
--- Anti-AFK
+-- ✅ Anti-AFK
 for _, v in pairs(getconnections(player.Idled)) do v:Disable() end
 player.Idled:Connect(function()
 	game:GetService("VirtualUser"):Button2Down(Vector2.new(), workspace.CurrentCamera.CFrame)
@@ -47,7 +49,7 @@ player.Idled:Connect(function()
 	game:GetService("VirtualUser"):Button2Up(Vector2.new(), workspace.CurrentCamera.CFrame)
 end)
 
--- Noclip
+-- ✅ No Clip permanente
 game:GetService("RunService").Stepped:Connect(function()
 	local char = player.Character
 	if char then
@@ -59,7 +61,7 @@ game:GetService("RunService").Stepped:Connect(function()
 	end
 end)
 
--- Anti-Knockback
+-- ✅ Anti-Knockback
 local LastPosition = nil
 spawn(function()
 	while true do
@@ -80,7 +82,7 @@ spawn(function()
 	end
 end)
 
--- tp loop a direcciones aleatorias (8) En la consola hay registros (f9)
+-- ✅ TP loop con 8 direcciones posibles
 spawn(function()
 	while true do
 		wait(0.005)
@@ -122,11 +124,11 @@ spawn(function()
 	end
 end)
 
-MainSection:NewLabel("TP Loop con 8 direcciones (cambiara al reaparecer)")
+MainSection:NewLabel("TP Loop con 8 direcciones (cambia al reaparecer)")
 
--- AutoStats
+-- ✅ AutoStats UI (Modo explosivo: 4000 puntos en ráfagas de 50x20)
 local AutoStatsTab = Window:NewTab("AutoStats")
-local Auto = AutoStatsTab:NewSection("Autostats")
+local Auto = AutoStatsTab:NewSection("Auto distribución de stats")
 
 _G.Point = 0
 _G.Stat = nil
@@ -138,7 +140,7 @@ local statMap = {
 	["Metal"] = "metalSkin"
 }
 
--- slider
+-- Slider hasta 4000, en pasos de 200
 Auto:NewSlider("Puntos a aplicar", "Múltiplos de 200", 4000, 0, function(value)
 	_G.Point = math.floor(value / 50) * 50
 end)
@@ -147,13 +149,13 @@ Auto:NewDropdown("Elegir Stat", "Selecciona un stat", {"Fuerza", "Energía", "Vi
 	_G.Stat = statMap[nombreVisible]
 end)
 
-Auto:NewButton("Aplicar puntos", "Modo sexito", function()
+Auto:NewButton("Aplicar puntos", "Modo explosivo (50 por hilo)", function()
 	if not _G.Stat then
 		warn("Selecciona un stat válido.")
 		return
 	end
 	if _G.Point < 50 then
-		warn("59 +")
+		warn("Mínimo 50 puntos.")
 		return
 	end
 
@@ -166,5 +168,5 @@ Auto:NewButton("Aplicar puntos", "Modo sexito", function()
 		end)
 	end
 
-	print("Aplicados " .. _G.Point .. " puntos a " .. _G.Stat .. "")
+	print("🔥 Aplicados " .. _G.Point .. " puntos a " .. _G.Stat .. " en modo ultra rápido")
 end)
