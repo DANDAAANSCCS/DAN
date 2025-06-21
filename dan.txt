@@ -106,14 +106,14 @@ end)
 
 -- chat
 local tablaMensajes = {
-	"Soy el mejor B)",
-	"Farm time 😎",
-	"Yo ni me muevo y gano jaja",
-	"¿Dónde están los malos?",
-	"No pueden contra mí >:)",
-	"Esto es automático papá",
-	"Me encanta este juego B)",
-	"Quiero más poder 🔥"
+	"no me vea",
+	"yo lo veo",
+	"hijoosss, a comeeer",
+	"world no me llega",
+	"a la vuelta mijo",
+	"eso que",
+	"estudia las tablas mijo",
+	"ayer"
 }
 
 spawn(function()
