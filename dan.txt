@@ -129,11 +129,11 @@ end)
 -- UI mensaje
 Section:NewLabel("Script activo: Punch, TP, AntiKnockback, NoClip, AntiAFK, Chat spam")
 
-task.wait(1) -- Espera para evitar errores de inicialización prematura
+task.wait(1)
 
 -- stats
 local AutoStatsTab = Window:NewTab("AutoStats")
-local Auto = AutoStatsTab:NewSection("Auto distribución de stats")
+local Auto = AutoStatsTab:NewSection("AutoStats")
 
 _G.Point = 0
 _G.Stat = nil
@@ -145,7 +145,6 @@ local statMap = {
 	["Metal"] = "metalSkin"
 }
 
--- Slider hasta 4000, en pasos de 200
 Auto:NewSlider("Puntos a aplicar", "Múltiplos de 200", 4000, 0, function(value)
 	_G.Point = math.floor(value / 50) * 50
 end)
@@ -154,13 +153,13 @@ Auto:NewDropdown("Elegir Stat", "Selecciona un stat", {"Fuerza", "Energía", "Vi
 	_G.Stat = statMap[nombreVisible]
 end)
 
-Auto:NewButton("Aplicar puntos", "Modo explosivo (50 por hilo)", function()
+Auto:NewButton("Aplicar puntos", "Modo sexito (50 por hilo)", function()
 	if not _G.Stat then
 		warn("Selecciona un stat válido.")
 		return
 	end
 	if _G.Point < 50 then
-		warn("Mínimo 50 puntos.")
+		warn("50 + ")
 		return
 	end
 
@@ -173,7 +172,6 @@ Auto:NewButton("Aplicar puntos", "Modo explosivo (50 por hilo)", function()
 		end)
 	end
 
-	print("🔥 Aplicados " .. _G.Point .. " puntos a " .. _G.Stat .. " en modo ultra rápido")
 end)
 
 -- orbes de xp
@@ -189,7 +187,7 @@ spawn(function()
 					pcall(function()
 						firetouchinterest(head, orb, 0)
 					end)
-					break -- solo 1 por segundo
+					break
 				end
 			end
 		end
