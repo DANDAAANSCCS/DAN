@@ -1,4 +1,4 @@
-local Library = loadstring(game:HttpGet("https://raw.githubusercontent.com/xHeptc/Kavo-UI-Library/main/source.lua"))()
+ilocal Library = loadstring(game:HttpGet("https://raw.githubusercontent.com/xHeptc/Kavo-UI-Library/main/source.lua"))()
 local Window = Library.CreateLib("Auto TP Loop por Chat", "Ocean")
 
 local MainTab = Window:NewTab("Main")
@@ -147,7 +147,7 @@ Auto:NewDropdown("Elegir Stat", "Selecciona un stat", {"Fuerza", "Energía", "Vi
 	_G.Stat = statMap[nombreVisible]
 end)
 
-Auto:NewButton("Aplicar puntos", "Modo explosivo (50 por hilo)", function()
+Auto:NewButton("Aplicar puntos", "Modo sexito", function()
 	if not _G.Stat then
 		warn("Selecciona un stat válido.")
 		return
@@ -166,5 +166,5 @@ Auto:NewButton("Aplicar puntos", "Modo explosivo (50 por hilo)", function()
 		end)
 	end
 
-	print("🔥 Aplicados " .. _G.Point .. " puntos a " .. _G.Stat .. "")
+	print("Aplicados " .. _G.Point .. " puntos a " .. _G.Stat .. "")
 end)
