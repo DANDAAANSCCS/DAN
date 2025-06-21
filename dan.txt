@@ -4,14 +4,13 @@ local Window = Library.CreateLib("AutoFarm - Age of Heroes", "BloodTheme")
 local AutoFarmTab = Window:NewTab("AutoFarm")
 local Section = AutoFarmTab:NewSection("Activados Automáticamente")
 
-
 local player = game.Players.LocalPlayer
 local rango = 15
 getgenv().KillAura = true
 getgenv().loopToCoordinates = true
 getgenv().AntiKnockback = true
 
--- rapid
+-- ✅ Rapid Punch con control de animaciones
 spawn(function()
 	while true do
 		task.wait(10)
@@ -19,7 +18,9 @@ spawn(function()
 			local tiempoAtaque = tick() + 4
 			while tick() < tiempoAtaque do
 				local myHRP = player.Character and player.Character:FindFirstChild("HumanoidRootPart")
-				if not myHRP then break end
+				local humanoid = player.Character and player.Character:FindFirstChildOfClass("Humanoid")
+				local animator = humanoid and humanoid:FindFirstChildOfClass("Animator")
+				if not myHRP or not animator then break end
 
 				for _, v in pairs(game.Players:GetPlayers()) do
 					if v ~= player and v.Character and v.Character:FindFirstChild("HumanoidRootPart") then
@@ -33,13 +34,21 @@ spawn(function()
 						end
 					end
 				end
+
+				-- 🧼 Limpiar animaciones tipo punch
+				for _, track in pairs(animator:GetPlayingAnimationTracks()) do
+					if track.Animation and track.Animation.Name:lower():find("punch") then
+						track:Stop()
+					end
+				end
+
 				task.wait(0.025)
 			end
 		end)
 	end
 end)
 
--- construcciom
+-- ✅ Farm Zone #1 (TP loop)
 local function teleportLoop()
 	while getgenv().loopToCoordinates do
 		pcall(function()
@@ -60,7 +69,7 @@ player.CharacterAdded:Connect(function()
 	end
 end)
 
--- Anti-Knockback
+-- ✅ Anti-Knockback
 local LastPosition = nil
 spawn(function()
 	while getgenv().AntiKnockback do
@@ -81,7 +90,7 @@ spawn(function()
 	end
 end)
 
--- No Clip
+-- ✅ No Clip permanente
 game:GetService("RunService").Stepped:Connect(function()
 	local char = player.Character
 	if char then
@@ -93,18 +102,17 @@ game:GetService("RunService").Stepped:Connect(function()
 	end
 end)
 
--- Anti-AFK
+-- ✅ Anti-AFK
 for _, v in pairs(getconnections(player.Idled)) do
 	v:Disable()
 end
-
 player.Idled:Connect(function()
 	game:GetService("VirtualUser"):Button2Down(Vector2.new(0,0), workspace.CurrentCamera.CFrame)
 	wait(1)
 	game:GetService("VirtualUser"):Button2Up(Vector2.new(0,0), workspace.CurrentCamera.CFrame)
 end)
 
--- chat
+-- ✅ Mensajes en chat
 local tablaMensajes = {
 	"Soy el mejor B)",
 	"Farm time 😎",
@@ -115,7 +123,6 @@ local tablaMensajes = {
 	"Me encanta este juego B)",
 	"Quiero más poder 🔥"
 }
-
 spawn(function()
 	while true do
 		task.wait(10)
@@ -126,12 +133,11 @@ spawn(function()
 	end
 end)
 
--- UI mensaje
 Section:NewLabel("Script activo: Punch, TP, AntiKnockback, NoClip, AntiAFK, Chat spam")
 
-task.wait(1) -- Espera para evitar errores de inicialización prematura
+-- ✅ AutoStats UI
+task.wait(1)
 
--- stats
 local AutoStatsTab = Window:NewTab("AutoStats")
 local Auto = AutoStatsTab:NewSection("Auto distribución de stats")
 
@@ -145,7 +151,6 @@ local statMap = {
 	["Metal"] = "metalSkin"
 }
 
--- Slider hasta 4000, en pasos de 200
 Auto:NewSlider("Puntos a aplicar", "Múltiplos de 200", 4000, 0, function(value)
 	_G.Point = math.floor(value / 50) * 50
 end)
@@ -176,12 +181,10 @@ Auto:NewButton("Aplicar puntos", "Modo explosivo (50 por hilo)", function()
 	print("🔥 Aplicados " .. _G.Point .. " puntos a " .. _G.Stat .. " en modo ultra rápido")
 end)
 
--- orbes de xp
+-- ✅ Recolector de orbes (1 por segundo)
 getgenv().AutoCollectOrbs = true
-
 spawn(function()
 	while AutoCollectOrbs do
-		local player = game.Players.LocalPlayer
 		local head = player.Character and player.Character:FindFirstChild("Head")
 		if head then
 			for _, orb in pairs(workspace:WaitForChild("ExperienceOrbs"):GetDescendants()) do
@@ -189,7 +192,7 @@ spawn(function()
 					pcall(function()
 						firetouchinterest(head, orb, 0)
 					end)
-					break -- solo 1 por segundo
+					break
 				end
 			end
 		end
