@@ -1,175 +1,142 @@
 local Library = loadstring(game:HttpGet("https://raw.githubusercontent.com/xHeptc/Kavo-UI-Library/main/source.lua"))()
 local Window = Library.CreateLib("AutoFarm - Age of Heroes", "BloodTheme")
 
--- Tabs y secciones
 local AutoFarmTab = Window:NewTab("AutoFarm")
 local Section = AutoFarmTab:NewSection("Activados Automáticamente")
 
-local AutoStatsTab = Window:NewTab("AutoStats")
-local Auto = AutoStatsTab:NewSection("Auto distribución de stats")
 
--- Referencias
-local Players = game:GetService("Players")
-local ReplicatedStorage = game:GetService("ReplicatedStorage")
-local RunService = game:GetService("RunService")
-local VirtualUser = game:GetService("VirtualUser")
-
-local player = Players.LocalPlayer
+local player = game.Players.LocalPlayer
 local rango = 15
+getgenv().KillAura = true
+getgenv().loopToCoordinates = true
+getgenv().AntiKnockback = true
 
--- Flags globales
-getgenv().RapidEnabled       = true
-getgenv().KillAura           = true
-getgenv().loopToCoordinates  = true
-getgenv().AntiKnockback      = true
-getgenv().AutoCollectOrbs    = true
-
--------------------------
--- Rapid Punch Toggle --
--------------------------
-Section:NewToggle("Rapid Punch On/Off", "Activa o desactiva los golpes rápidos", function(state)
-    getgenv().RapidEnabled = state
-end)
-
+-- rapid
 spawn(function()
-    while true do
-        task.wait(0.025)
-        if getgenv().RapidEnabled then
-            local myHRP = player.Character and player.Character:FindFirstChild("HumanoidRootPart")
-            if myHRP then
-                for _, v in pairs(Players:GetPlayers()) do
-                    if v ~= player and v.Character and v.Character:FindFirstChild("HumanoidRootPart") then
-                        local objetivo = v.Character.HumanoidRootPart
-                        local dist = (myHRP.Position - objetivo.Position).Magnitude
-                        local escudo = v.Character:FindFirstChildOfClass("ForceField")
-                                        or objetivo:FindFirstChild("Shield")
-                                        or v.Character:FindFirstChild("Shield")
-                        local vivo = v.Character:FindFirstChild("Humanoid") and v.Character.Humanoid.Health > 0
-                        if dist < rango and not escudo and vivo then
-                            -- ráfaga de 4 golpes muy rápida
-                            for i=1,4 do
-                                pcall(function()
-                                    ReplicatedStorage.Events.Punch:FireServer(0.4, 0.1, 1)
-                                end)
-                            end
-                        end
-                    end
-                end
-            end
-        end
-    end
+	while true do
+		task.wait(10)
+		pcall(function()
+			local tiempoAtaque = tick() + 4
+			while tick() < tiempoAtaque do
+				local myHRP = player.Character and player.Character:FindFirstChild("HumanoidRootPart")
+				if not myHRP then break end
+
+				for _, v in pairs(game.Players:GetPlayers()) do
+					if v ~= player and v.Character and v.Character:FindFirstChild("HumanoidRootPart") then
+						local objetivoHRP = v.Character.HumanoidRootPart
+						local distancia = (myHRP.Position - objetivoHRP.Position).Magnitude
+						local tieneEscudo = v.Character:FindFirstChildOfClass("ForceField") or objetivoHRP:FindFirstChild("Shield") or v.Character:FindFirstChild("Shield")
+						local estaVivo = v.Character:FindFirstChild("Humanoid") and v.Character.Humanoid.Health > 0
+
+						if distancia < rango and not tieneEscudo and estaVivo then
+							game:GetService("ReplicatedStorage").Events.Punch:FireServer(0.4, 0.1, 1)
+						end
+					end
+				end
+				task.wait(0.025)
+			end
+		end)
+	end
 end)
 
------------------
--- Teleport TP --
------------------
+-- construcciom
 local function teleportLoop()
-    while getgenv().loopToCoordinates do
-        pcall(function()
-            local char = player.Character or player.CharacterAdded:Wait()
-            local root = char:WaitForChild("HumanoidRootPart", 5)
-            if root then
-                root.CFrame = CFrame.new(650, 779, 284)
-            end
-        end)
-        task.wait(0.5)
-    end
+	while getgenv().loopToCoordinates do
+		pcall(function()
+			local character = player.Character or player.CharacterAdded:Wait()
+			local rootPart = character:WaitForChild("HumanoidRootPart", 5)
+			if rootPart then
+				rootPart.CFrame = CFrame.new(650, 779, 284)
+			end
+		end)
+		task.wait(0.5)
+	end
 end
+
 spawn(teleportLoop)
 player.CharacterAdded:Connect(function()
-    if getgenv().loopToCoordinates then
-        spawn(teleportLoop)
-    end
+	if getgenv().loopToCoordinates then
+		spawn(teleportLoop)
+	end
 end)
 
----------------------
--- Anti-Knockback  --
----------------------
-local LastPosition
+-- Anti-Knockback
+local LastPosition = nil
 spawn(function()
-    while getgenv().AntiKnockback do
-        task.wait()
-        local char = player.Character
-        local root = char and char:FindFirstChild("HumanoidRootPart")
-        if root then
-            if root.AssemblyLinearVelocity.Magnitude > 250 or root.AssemblyAngularVelocity.Magnitude > 250 then
-                root.AssemblyLinearVelocity = Vector3.zero
-                root.AssemblyAngularVelocity = Vector3.zero
-                if LastPosition then root.CFrame = LastPosition end
-            elseif root.AssemblyLinearVelocity.Magnitude < 50 then
-                LastPosition = root.CFrame
-            end
-        end
-    end
+	while getgenv().AntiKnockback do
+		task.wait()
+		local char = player.Character
+		if char and char:FindFirstChild("HumanoidRootPart") then
+			local part = char.HumanoidRootPart
+			if part.AssemblyLinearVelocity.Magnitude > 250 or part.AssemblyAngularVelocity.Magnitude > 250 then
+				part.AssemblyLinearVelocity = Vector3.new(0, 0, 0)
+				part.AssemblyAngularVelocity = Vector3.new(0, 0, 0)
+				if LastPosition then
+					part.CFrame = LastPosition
+				end
+			elseif part.AssemblyLinearVelocity.Magnitude < 50 then
+				LastPosition = part.CFrame
+			end
+		end
+	end
 end)
 
-------------
--- NoClip -
-------------
-RunService.Stepped:Connect(function()
-    local char = player.Character
-    if char then
-        for _, part in pairs(char:GetDescendants()) do
-            if part:IsA("BasePart") then
-                part.CanCollide = false
-            end
-        end
-    end
+-- No Clip
+game:GetService("RunService").Stepped:Connect(function()
+	local char = player.Character
+	if char then
+		for _, part in pairs(char:GetDescendants()) do
+			if part:IsA("BasePart") then
+				part.CanCollide = false
+			end
+		end
+	end
 end)
 
--------------
--- AntiAFK-
--------------
-for _, conn in pairs(getconnections(player.Idled)) do conn:Disable() end
+-- Anti-AFK
+for _, v in pairs(getconnections(player.Idled)) do
+	v:Disable()
+end
+
 player.Idled:Connect(function()
-    VirtualUser:Button2Down(Vector2.new(), workspace.CurrentCamera.CFrame)
-    task.wait(1)
-    VirtualUser:Button2Up(Vector2.new(), workspace.CurrentCamera.CFrame)
+	game:GetService("VirtualUser"):Button2Down(Vector2.new(0,0), workspace.CurrentCamera.CFrame)
+	wait(1)
+	game:GetService("VirtualUser"):Button2Up(Vector2.new(0,0), workspace.CurrentCamera.CFrame)
 end)
 
-----------
--- Chat -
-----------
-local mensajes = {
-    "no me vea","yo lo veo","hijoosss, a comeeer",
-    "world no me llega","a la vuelta mijo","eso que",
-    "estudia las tablas mijo","ayer"
+-- chat
+local tablaMensajes = {
+	"no me vea",
+	"yo lo veo",
+	"hijoosss, a comeeer",
+	"world no me llega",
+	"a la vuelta mijo",
+	"eso que",
+	"estudia las tablas mijo",
+	"ayer"
 }
+
 spawn(function()
-    while true do
-        task.wait(10)
-        ReplicatedStorage.DefaultChatSystemChatEvents.SayMessageRequest:FireServer(
-            mensajes[math.random(1,#mensajes)], "All")
-    end
+	while true do
+		task.wait(10)
+		local mensaje = tablaMensajes[math.random(1, #tablaMensajes)]
+		pcall(function()
+			game:GetService("ReplicatedStorage").DefaultChatSystemChatEvents.SayMessageRequest:FireServer(mensaje, "All")
+		end)
+	end
 end)
 
--------------------
--- AutoCollectOrbs
--------------------
-spawn(function()
-    while getgenv().AutoCollectOrbs do
-        local head = player.Character and player.Character:FindFirstChild("Head")
-        if head then
-            for _, orb in pairs(workspace:WaitForChild("ExperienceOrbs"):GetDescendants()) do
-                if orb:IsA("BasePart") and orb:FindFirstChild("TouchInterest") then
-                    pcall(firetouchinterest, head, orb, 0)
-                    break
-                end
-            end
-        end
-        task.wait(1)
-    end
-end)
+-- UI mensaje
+Section:NewLabel("Script activo: Punch, TP, AntiKnockback, NoClip, AntiAFK, Chat spam")
 
---------------------
--- AutoStats UI ---
---------------------
--- ✅ AutoStats UI (Aplica en bloques de 1000 puntos, slider hasta 8000)
+task.wait(1)
+
+-- ✅ AutoStats UI (Aplica en bloques de 50 puntos, slider hasta 15k)
 local AutoStatsTab = Window:NewTab("AutoStats")
 local Auto = AutoStatsTab:NewSection("Auto distribución de stats")
 
 _G.Point = 0
-_G.Stat  = nil
+_G.Stat = nil
 
 local statMap = {
     ["Fuerza"]    = "strength",
@@ -178,46 +145,66 @@ local statMap = {
     ["Metal"]     = "metalSkin"
 }
 
--- Slider hasta 8,000, en múltiplos de 1000
-local ptsSlider = Auto:NewSlider("Puntos a aplicar", "Múltiplos de 1000", 8000, 0, function(val)
-    _G.Point = math.floor(val / 1000) * 1000
-    ptsSlider:ChangeLabel("Puntos a aplicar: " .. _G.Point)
+-- Slider hasta 15,000, en múltiplos de 50
+autoPoints = Auto:NewSlider("Puntos a aplicar", "Múltiplos de 50", 15000, 0, function(value)
+    _G.Point = math.floor(value / 50) * 50
+    autoPoints:ChangeLabel("Puntos a aplicar: " .. _G.Point)
 end)
 
-local statDropdown = Auto:NewDropdown("Elegir Stat", "", {"Fuerza","Energía","Vitalidad","Metal"}, function(vis)
-    _G.Stat = statMap[vis]
-    statDropdown:ChangeLabel("Stat: " .. vis)
+autoStatDropdown = Auto:NewDropdown("Elegir Stat", "Selecciona un stat", {"Fuerza", "Energía", "Vitalidad", "Metal"}, function(nombreVisible)
+    _G.Stat = statMap[nombreVisible]
+    autoStatDropdown:ChangeLabel("Stat seleccionado: " .. nombreVisible)
 end)
 
-Auto:NewButton("Aplicar por lotes", "1000 puntos por lote, espera 8s entre lotes", function()
+Auto:NewButton("Aplicar puntos", "Aplica en bloques de 50", function()
     if not _G.Stat then
         warn("Selecciona un stat válido.")
         return
     end
-    if _G.Point < 1000 then
-        warn("Mínimo 1000 puntos.")
+    if _G.Point < 50 then
+        warn("Mínimo 50 puntos.")
         return
     end
 
-    local total   = _G.Point
-    local batches = math.floor(total / 1000)
-
-    for b = 1, batches do
-        -- Ejecutar lote de 1000 mejoras
+    local total = _G.Point
+    local batches = math.floor(total / 50)
+    for i = 1, batches do
         spawn(function()
-            for i = 1, 1000 do
-                local ok, err = pcall(function()
-                    ReplicatedStorage.Events.UpgradeAbility:InvokeServer(_G.Stat)
+            for j = 1, 50 do
+                local success, err = pcall(function()
+                    game:GetService("ReplicatedStorage").Events.UpgradeAbility:InvokeServer(_G.Stat)
                 end)
-                if not ok then
-                    warn("Error UpgradeAbility:", err)
+                if not success then
+                    warn("Error en UpgradeAbility: " .. err)
                     return
                 end
             end
         end)
-        -- Espera 8 segundos antes del siguiente lote
-        task.wait(8)
+        -- Pausa ligera para evitar lag o detección excesiva
+        task.wait(4)
     end
 
-    print(("⚡ Applied %d points to %s in %d batches of 1000"):format(total, _G.Stat, batches))
+    print("⚡ Aplicados " .. total .. " puntos a " .. _G.Stat .. " en " .. batches .. " lotes de 50")
+end)
+
+
+-- orbes de xp
+getgenv().AutoCollectOrbs = true
+
+spawn(function()
+	while AutoCollectOrbs do
+		local player = game.Players.LocalPlayer
+		local head = player.Character and player.Character:FindFirstChild("Head")
+		if head then
+			for _, orb in pairs(workspace:WaitForChild("ExperienceOrbs"):GetDescendants()) do
+				if orb:IsA("BasePart") and orb:FindFirstChild("TouchInterest") then
+					pcall(function()
+						firetouchinterest(head, orb, 0)
+					end)
+					break
+				end
+			end
+		end
+		task.wait(1)
+	end
 end)
