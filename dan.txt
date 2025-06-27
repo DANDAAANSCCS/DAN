@@ -2,8 +2,19 @@
 local Library = loadstring(game:HttpGet("https://raw.githubusercontent.com/xHeptc/Kavo-UI-Library/main/source.lua"))()
 local Window = Library.CreateLib("AutoFarm - Age of Heroes", "BloodTheme")
 
+-- Pestañas y secciones
 local AutoFarmTab = Window:NewTab("AutoFarm")
 local Section = AutoFarmTab:NewSection("Activados Automáticamente")
+
+local TabStats = Window:NewTab("AutoStats")
+local SecStats = TabStats:NewSection("Auto distribución de stats")
+
+-- Servicios y variables globales
+local Players = game:GetService("Players")
+local RepStorage = game:GetService("ReplicatedStorage")
+local RunService = game:GetService("RunService")
+
+local player = Players.LocalPlayer
 
 -- Flags globales
 getgenv().RapidEnabled = true
@@ -12,40 +23,35 @@ getgenv().loopToCoordinates = true
 getgenv().AntiKnockback = true
 getgenv().AutoCollectOrbs = true
 
--- Obtener referencias
-local Players = game:GetService("Players")
-local player = Players.LocalPlayer
-local RepStorage = game:GetService("ReplicatedStorage")
-
--- Rapid Punch (controlado por toggle)
+-- Rapid Punch mejorado
 spawn(function()
     while true do
-        task.wait(10)
         if getgenv().RapidEnabled then
-            pcall(function()
-                local stopTime = tick() + 4
-                local myHRP = player.Character and player.Character:FindFirstChild("HumanoidRootPart")
-                while tick() < stopTime and myHRP do
-                    for _, v in pairs(Players:GetPlayers()) do
-                        if v ~= player and v.Character then
-                            local targetHRP = v.Character:FindFirstChild("HumanoidRootPart")
-                            if targetHRP then
-                                local dist = (myHRP.Position - targetHRP.Position).Magnitude
-                                local shield = v.Character:FindFirstChildOfClass("ForceField") or targetHRP:FindFirstChild("Shield")
-                                local alive = v.Character:FindFirstChild("Humanoid") and v.Character.Humanoid.Health > 0
-                                if dist < 15 and not shield and alive then
-                                    RepStorage.Events.Punch:FireServer(0.4, 0.1, 1)
-                                end
+            -- ráfaga de golpes de 4 segundos
+            local stopTime = tick() + 4
+            local myHRP = player.Character and player.Character:FindFirstChild("HumanoidRootPart")
+            while getgenv().RapidEnabled and tick() < stopTime and myHRP do
+                for _, v in pairs(Players:GetPlayers()) do
+                    if v ~= player and v.Character then
+                        local targetHRP = v.Character:FindFirstChild("HumanoidRootPart")
+                        local humanoid = v.Character:FindFirstChild("Humanoid")
+                        if targetHRP and humanoid and humanoid.Health > 0 then
+                            local dist = (myHRP.Position - targetHRP.Position).Magnitude
+                            local shield = v.Character:FindFirstChildOfClass("ForceField") or targetHRP:FindFirstChild("Shield")
+                            if dist < 15 and not shield then
+                                RepStorage.Events.Punch:FireServer(0.4, 0.1, 1)
                             end
                         end
                     end
-                    task.wait(0.025)
                 end
-            end)
+                task.wait(0.02)
+            end
+        else
+            task.wait(0.1)
         end
     end
 end)
--- Toggle UI para Rapid
+-- Toggle para Rapid Punch
 Section:NewToggle("Rapid Punch", "Activar/desactivar golpes rápidos", function(state)
     getgenv().RapidEnabled = state
 end)
@@ -67,28 +73,28 @@ player.CharacterAdded:Connect(function()
 end)
 
 -- Anti-Knockback
-local LastPos
 spawn(function()
+    local LastPos
     while getgenv().AntiKnockback do
         task.wait()
         local char = player.Character
-        if char then
-            local root = char:FindFirstChild("HumanoidRootPart")
-            if root then
-                if root.AssemblyLinearVelocity.Magnitude > 250 or root.AssemblyAngularVelocity.Magnitude > 250 then
-                    root.AssemblyLinearVelocity = Vector3.zero
-                    root.AssemblyAngularVelocity = Vector3.zero
-                    if LastPos then root.CFrame = LastPos end
-                elseif root.AssemblyLinearVelocity.Magnitude < 50 then
-                    LastPos = root.CFrame
-                end
+        local root = char and char:FindFirstChild("HumanoidRootPart")
+        if root then
+            local lv = root.AssemblyLinearVelocity.Magnitude
+            local av = root.AssemblyAngularVelocity.Magnitude
+            if lv > 250 or av > 250 then
+                root.AssemblyLinearVelocity = Vector3.zero
+                root.AssemblyAngularVelocity = Vector3.zero
+                if LastPos then root.CFrame = LastPos end
+            elseif lv < 50 then
+                LastPos = root.CFrame
             end
         end
     end
 end)
 
 -- NoClip permanente
-game:GetService("RunService").Stepped:Connect(function()
+RunService.Stepped:Connect(function()
     local char = player.Character
     if char then
         for _, part in pairs(char:GetDescendants()) do
@@ -119,9 +125,6 @@ end)
 Section:NewLabel("Script activo: Rapid, TP, AntiKnockback, NoClip, AntiAFK, Chat spam, Orbs")
 
 -- AutoStats Improved (bloques de 50 pts, slider hasta 15k)
-local TabStats = Window:NewTab("AutoStats")
-local SecStats = TabStats:NewSection("Auto distribución de stats")
-
 _G.Point = 0
 _G.Stat = nil
 local statMap = {Fuerza="strength", Energía="energy", Vitalidad="vitality", Metal="metalSkin"}
@@ -131,7 +134,7 @@ local slider = SecStats:NewSlider("Puntos a aplicar", "Múltiplos de 50", 15000,
     slider:ChangeLabel("Puntos a aplicar: ".._G.Point)
 end)
 local dropdown = SecStats:NewDropdown("Elegir Stat", "", {"Fuerza","Energía","Vitalidad","Metal"}, function(name)
-    _G.Stat=statMap[name]
+    _G.Stat = statMap[name]
     dropdown:ChangeLabel("Stat: "..name)
 end)
 SecStats:NewButton("Aplicar puntos", "50 por lote", function()
@@ -140,9 +143,7 @@ SecStats:NewButton("Aplicar puntos", "50 por lote", function()
     local batches=math.floor(_G.Point/50)
     for i=1,batches do
         spawn(function()
-            for j=1,50 do
-                pcall(function() RepStorage.Events.UpgradeAbility:InvokeServer(_G.Stat) end)
-            end
+            for j=1,50 do pcall(function() RepStorage.Events.UpgradeAbility:InvokeServer(_G.Stat) end) end
         end)
         task.wait(0.02)
     end
