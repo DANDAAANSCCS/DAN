@@ -37,7 +37,7 @@ spawn(function()
 			end
 		end)
 	end
-end)
+end) 
 
 -- construcciom
 local function teleportLoop()
