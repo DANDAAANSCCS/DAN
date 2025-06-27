@@ -131,9 +131,9 @@ Section:NewLabel("Script activo: Punch, TP, AntiKnockback, NoClip, AntiAFK, Chat
 
 task.wait(1)
 
--- stats
+-- ✅ AutoStats UI (Modo explosivo: hasta 100,000 puntos en ráfagas de 2x)
 local AutoStatsTab = Window:NewTab("AutoStats")
-local Auto = AutoStatsTab:NewSection("AutoStats")
+local Auto = AutoStatsTab:NewSection("Auto distribución de stats")
 
 _G.Point = 0
 _G.Stat = nil
@@ -145,35 +145,36 @@ local statMap = {
 	["Metal"] = "metalSkin"
 }
 
-Auto:NewSlider("Puntos a aplicar", "Múltiplos de 200", 4000, 0, function(value)
-	_G.Point = math.floor(value / 50) * 50
+-- Slider hasta 100,000, en pasos de 2
+Auto:NewSlider("Puntos a aplicar", "Múltiplos de 2", 100000, 0, function(value)
+	_G.Point = math.floor(value / 2) * 2
 end)
 
 Auto:NewDropdown("Elegir Stat", "Selecciona un stat", {"Fuerza", "Energía", "Vitalidad", "Metal"}, function(nombreVisible)
 	_G.Stat = statMap[nombreVisible]
 end)
 
-Auto:NewButton("Aplicar puntos", "Modo sexito (50 por hilo)", function()
+Auto:NewButton("Aplicar puntos", "Modo ráfaga (2 por hilo)", function()
 	if not _G.Stat then
 		warn("Selecciona un stat válido.")
 		return
 	end
-	if _G.Point < 50 then
-		warn("50 + ")
+	if _G.Point < 2 then
+		warn("Mínimo 2 puntos.")
 		return
 	end
 
-	local lotes = math.floor(_G.Point / 50)
+	local lotes = math.floor(_G.Point / 2)
 	for i = 1, lotes do
 		spawn(function()
-			for j = 1, 50 do
+			for j = 1, 2 do
 				game:GetService("ReplicatedStorage").Events.UpgradeAbility:InvokeServer(_G.Stat)
 			end
 		end)
 	end
 
+	print("⚡ Aplicados " .. _G.Point .. " puntos a " .. _G.Stat .. " en bloques de 2")
 end)
-
 -- orbes de xp
 getgenv().AutoCollectOrbs = true
 
