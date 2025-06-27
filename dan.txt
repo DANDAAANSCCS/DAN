@@ -133,17 +133,17 @@ task.wait(1)
 
 -- STATS
 local AutoStatsTab = Window:NewTab("AutoStats")
-local StatSection = AutoStatsTab:NewSection("Auto mejora de habilidades")
+local StatSection = AutoStatsTab:NewSection("AutoStats Lento Para Farmer")
 
 StatSection:NewLabel("Habilidades")
 StatSection:NewDropdown("AutoStats", "", {"vitality","strength","energy","metalSkin"}, function(currentOption)
 	selectedstat = currentOption;
 end);
-StatSection:NewToggle("Toggle AutoStats 15", "", function(state)
+StatSection:NewToggle("Toggle AutoStats", "", function(state)
     if state then
         getgenv().AutoStats15 = true
         while getgenv().AutoStats15 do
-            wait(0)
+            wait(8)
             spawn(function()
                 for i = 1, 50 do
                     game:GetService("ReplicatedStorage").Events.UpgradeAbility:InvokeServer(selectedstat)
