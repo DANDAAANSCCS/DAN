@@ -203,7 +203,7 @@ Auto:NewButton("Aplicar lento", "1 punto cada 0.2s", function()
             warn("Error UpgradeAbility:",err)
             break
         end
-        task.wait(0.2)
+        task.wait(0.002)
     end
     print("✨ Applied ".._G.Point.." points to ".._G.Stat.." (0.2s interval)")
 end)
