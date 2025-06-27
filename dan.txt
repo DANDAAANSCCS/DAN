@@ -164,6 +164,10 @@ end)
 --------------------
 -- AutoStats UI ---
 --------------------
+-- ✅ AutoStats UI (Aplica en bloques de 1000 puntos, slider hasta 8000)
+local AutoStatsTab = Window:NewTab("AutoStats")
+local Auto = AutoStatsTab:NewSection("Auto distribución de stats")
+
 _G.Point = 0
 _G.Stat  = nil
 
@@ -174,36 +178,46 @@ local statMap = {
     ["Metal"]     = "metalSkin"
 }
 
--- Slider hasta 8,000, de 1 en 1
-local ptsSlider = Auto:NewSlider("Puntos a aplicar", "1 en 1, hasta 8000", 8000, 0, function(val)
-    _G.Point = math.floor(val)
-    ptsSlider:ChangeLabel("Puntos a aplicar: ".._G.Point)
+-- Slider hasta 8,000, en múltiplos de 1000
+local ptsSlider = Auto:NewSlider("Puntos a aplicar", "Múltiplos de 1000", 8000, 0, function(val)
+    _G.Point = math.floor(val / 1000) * 1000
+    ptsSlider:ChangeLabel("Puntos a aplicar: " .. _G.Point)
 end)
 
 local statDropdown = Auto:NewDropdown("Elegir Stat", "", {"Fuerza","Energía","Vitalidad","Metal"}, function(vis)
     _G.Stat = statMap[vis]
-    statDropdown:ChangeLabel("Stat: "..vis)
+    statDropdown:ChangeLabel("Stat: " .. vis)
 end)
 
-Auto:NewButton("Aplicar lento", "1 punto cada 0.2s", function()
+Auto:NewButton("Aplicar por lotes", "1000 puntos por lote, espera 8s entre lotes", function()
     if not _G.Stat then
-        warn("Selecciona un stat.")
+        warn("Selecciona un stat válido.")
         return
     end
-    if _G.Point < 1 then
-        warn("Ingresa al menos 1 punto.")
+    if _G.Point < 1000 then
+        warn("Mínimo 1000 puntos.")
         return
     end
 
-    for i=1,_G.Point do
-        local ok,err = pcall(function()
-            ReplicatedStorage.Events.UpgradeAbility:InvokeServer(_G.Stat)
+    local total   = _G.Point
+    local batches = math.floor(total / 1000)
+
+    for b = 1, batches do
+        -- Ejecutar lote de 1000 mejoras
+        spawn(function()
+            for i = 1, 1000 do
+                local ok, err = pcall(function()
+                    ReplicatedStorage.Events.UpgradeAbility:InvokeServer(_G.Stat)
+                end)
+                if not ok then
+                    warn("Error UpgradeAbility:", err)
+                    return
+                end
+            end
         end)
-        if not ok then
-            warn("Error UpgradeAbility:",err)
-            break
-        end
-        task.wait(0.002)
+        -- Espera 8 segundos antes del siguiente lote
+        task.wait(8)
     end
-    print("✨ Applied ".._G.Point.." points to ".._G.Stat.." (0.2s interval)")
+
+    print(("⚡ Applied %d points to %s in %d batches of 1000"):format(total, _G.Stat, batches))
 end)
