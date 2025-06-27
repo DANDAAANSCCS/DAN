@@ -1,167 +1,209 @@
--- Cargar UI
 local Library = loadstring(game:HttpGet("https://raw.githubusercontent.com/xHeptc/Kavo-UI-Library/main/source.lua"))()
 local Window = Library.CreateLib("AutoFarm - Age of Heroes", "BloodTheme")
 
--- Pestañas y secciones
+-- Tabs y secciones
 local AutoFarmTab = Window:NewTab("AutoFarm")
 local Section = AutoFarmTab:NewSection("Activados Automáticamente")
 
-local TabStats = Window:NewTab("AutoStats")
-local SecStats = TabStats:NewSection("Auto distribución de stats")
+local AutoStatsTab = Window:NewTab("AutoStats")
+local Auto = AutoStatsTab:NewSection("Auto distribución de stats")
 
--- Servicios y variables globales
+-- Referencias
 local Players = game:GetService("Players")
-local RepStorage = game:GetService("ReplicatedStorage")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
+local VirtualUser = game:GetService("VirtualUser")
 
 local player = Players.LocalPlayer
+local rango = 15
 
 -- Flags globales
-getgenv().RapidEnabled = true
-getgenv().KillAura = true
-getgenv().loopToCoordinates = true
-getgenv().AntiKnockback = true
-getgenv().AutoCollectOrbs = true
+getgenv().RapidEnabled       = true
+getgenv().KillAura           = true
+getgenv().loopToCoordinates  = true
+getgenv().AntiKnockback      = true
+getgenv().AutoCollectOrbs    = true
 
--- Rapid Punch mejorado
+-------------------------
+-- Rapid Punch Toggle --
+-------------------------
+Section:NewToggle("Rapid Punch On/Off", "Activa o desactiva los golpes rápidos", function(state)
+    getgenv().RapidEnabled = state
+end)
+
 spawn(function()
     while true do
+        task.wait(0.025)
         if getgenv().RapidEnabled then
-            -- ráfaga de golpes de 4 segundos
-            local stopTime = tick() + 4
             local myHRP = player.Character and player.Character:FindFirstChild("HumanoidRootPart")
-            while getgenv().RapidEnabled and tick() < stopTime and myHRP do
+            if myHRP then
                 for _, v in pairs(Players:GetPlayers()) do
-                    if v ~= player and v.Character then
-                        local targetHRP = v.Character:FindFirstChild("HumanoidRootPart")
-                        local humanoid = v.Character:FindFirstChild("Humanoid")
-                        if targetHRP and humanoid and humanoid.Health > 0 then
-                            local dist = (myHRP.Position - targetHRP.Position).Magnitude
-                            local shield = v.Character:FindFirstChildOfClass("ForceField") or targetHRP:FindFirstChild("Shield")
-                            if dist < 15 and not shield then
-                                RepStorage.Events.Punch:FireServer(0.4, 0.1, 1)
+                    if v ~= player and v.Character and v.Character:FindFirstChild("HumanoidRootPart") then
+                        local objetivo = v.Character.HumanoidRootPart
+                        local dist = (myHRP.Position - objetivo.Position).Magnitude
+                        local escudo = v.Character:FindFirstChildOfClass("ForceField")
+                                        or objetivo:FindFirstChild("Shield")
+                                        or v.Character:FindFirstChild("Shield")
+                        local vivo = v.Character:FindFirstChild("Humanoid") and v.Character.Humanoid.Health > 0
+                        if dist < rango and not escudo and vivo then
+                            -- ráfaga de 4 golpes muy rápida
+                            for i=1,4 do
+                                pcall(function()
+                                    ReplicatedStorage.Events.Punch:FireServer(0.4, 0.1, 1)
+                                end)
                             end
                         end
                     end
                 end
-                task.wait(0.02)
             end
-        else
-            task.wait(0.1)
         end
     end
 end)
--- Toggle para Rapid Punch
-Section:NewToggle("Rapid Punch", "Activar/desactivar golpes rápidos", function(state)
-    getgenv().RapidEnabled = state
-end)
 
--- Teleport Loop
+-----------------
+-- Teleport TP --
+-----------------
 local function teleportLoop()
     while getgenv().loopToCoordinates do
         pcall(function()
             local char = player.Character or player.CharacterAdded:Wait()
             local root = char:WaitForChild("HumanoidRootPart", 5)
-            if root then root.CFrame = CFrame.new(650, 779, 284) end
+            if root then
+                root.CFrame = CFrame.new(650, 779, 284)
+            end
         end)
         task.wait(0.5)
     end
 end
 spawn(teleportLoop)
 player.CharacterAdded:Connect(function()
-    if getgenv().loopToCoordinates then spawn(teleportLoop) end
+    if getgenv().loopToCoordinates then
+        spawn(teleportLoop)
+    end
 end)
 
--- Anti-Knockback
+---------------------
+-- Anti-Knockback  --
+---------------------
+local LastPosition
 spawn(function()
-    local LastPos
     while getgenv().AntiKnockback do
         task.wait()
         local char = player.Character
         local root = char and char:FindFirstChild("HumanoidRootPart")
         if root then
-            local lv = root.AssemblyLinearVelocity.Magnitude
-            local av = root.AssemblyAngularVelocity.Magnitude
-            if lv > 250 or av > 250 then
+            if root.AssemblyLinearVelocity.Magnitude > 250 or root.AssemblyAngularVelocity.Magnitude > 250 then
                 root.AssemblyLinearVelocity = Vector3.zero
                 root.AssemblyAngularVelocity = Vector3.zero
-                if LastPos then root.CFrame = LastPos end
-            elseif lv < 50 then
-                LastPos = root.CFrame
+                if LastPosition then root.CFrame = LastPosition end
+            elseif root.AssemblyLinearVelocity.Magnitude < 50 then
+                LastPosition = root.CFrame
             end
         end
     end
 end)
 
--- NoClip permanente
+------------
+-- NoClip -
+------------
 RunService.Stepped:Connect(function()
     local char = player.Character
     if char then
         for _, part in pairs(char:GetDescendants()) do
-            if part:IsA("BasePart") then part.CanCollide = false end
+            if part:IsA("BasePart") then
+                part.CanCollide = false
+            end
         end
     end
 end)
 
--- Anti-AFK
+-------------
+-- AntiAFK-
+-------------
 for _, conn in pairs(getconnections(player.Idled)) do conn:Disable() end
 player.Idled:Connect(function()
-    game:GetService("VirtualUser"):Button2Down(Vector2.new(), workspace.CurrentCamera.CFrame)
+    VirtualUser:Button2Down(Vector2.new(), workspace.CurrentCamera.CFrame)
     task.wait(1)
-    game:GetService("VirtualUser"):Button2Up(Vector2.new(), workspace.CurrentCamera.CFrame)
+    VirtualUser:Button2Up(Vector2.new(), workspace.CurrentCamera.CFrame)
 end)
 
--- Chat spam
-local messages = {"no me vea", "yo lo veo", "hijoosss, a comeeer", "world no me llega", "a la vuelta mijo", "eso que", "estudia las tablas mijo", "ayer"}
+----------
+-- Chat -
+----------
+local mensajes = {
+    "no me vea","yo lo veo","hijoosss, a comeeer",
+    "world no me llega","a la vuelta mijo","eso que",
+    "estudia las tablas mijo","ayer"
+}
 spawn(function()
     while true do
         task.wait(10)
-        local msg = messages[math.random(#messages)]
-        pcall(function()
-            RepStorage.DefaultChatSystemChatEvents.SayMessageRequest:FireServer(msg, "All")
-        end)
+        ReplicatedStorage.DefaultChatSystemChatEvents.SayMessageRequest:FireServer(
+            mensajes[math.random(1,#mensajes)], "All")
     end
 end)
-Section:NewLabel("Script activo: Rapid, TP, AntiKnockback, NoClip, AntiAFK, Chat spam, Orbs")
 
--- AutoStats Improved (bloques de 50 pts, slider hasta 15k)
-_G.Point = 0
-_G.Stat = nil
-local statMap = {Fuerza="strength", Energía="energy", Vitalidad="vitality", Metal="metalSkin"}
-
-local slider = SecStats:NewSlider("Puntos a aplicar", "Múltiplos de 50", 15000, 0, function(val)
-    _G.Point = math.floor(val/50)*50
-    slider:ChangeLabel("Puntos a aplicar: ".._G.Point)
-end)
-local dropdown = SecStats:NewDropdown("Elegir Stat", "", {"Fuerza","Energía","Vitalidad","Metal"}, function(name)
-    _G.Stat = statMap[name]
-    dropdown:ChangeLabel("Stat: "..name)
-end)
-SecStats:NewButton("Aplicar puntos", "50 por lote", function()
-    if not _G.Stat then warn("Selecciona stat") return end
-    if _G.Point<50 then warn("Mínimo 50 pts") return end
-    local batches=math.floor(_G.Point/50)
-    for i=1,batches do
-        spawn(function()
-            for j=1,50 do pcall(function() RepStorage.Events.UpgradeAbility:InvokeServer(_G.Stat) end) end
-        end)
-        task.wait(0.02)
-    end
-    print("⚡ Aplicados ".._G.Point.." pts a ".._G.Stat)
-end)
-
--- AutoCollect Orbs
+-------------------
+-- AutoCollectOrbs
+-------------------
 spawn(function()
     while getgenv().AutoCollectOrbs do
         local head = player.Character and player.Character:FindFirstChild("Head")
         if head then
-            for _,orb in pairs(workspace:WaitForChild("ExperienceOrbs"):GetDescendants()) do
+            for _, orb in pairs(workspace:WaitForChild("ExperienceOrbs"):GetDescendants()) do
                 if orb:IsA("BasePart") and orb:FindFirstChild("TouchInterest") then
-                    pcall(function() firetouchinterest(head,orb,0) end)
+                    pcall(firetouchinterest, head, orb, 0)
                     break
                 end
             end
         end
         task.wait(1)
     end
+end)
+
+--------------------
+-- AutoStats UI ---
+--------------------
+_G.Point = 0
+_G.Stat  = nil
+
+local statMap = {
+    ["Fuerza"]    = "strength",
+    ["Energía"]   = "energy",
+    ["Vitalidad"] = "vitality",
+    ["Metal"]     = "metalSkin"
+}
+
+-- Slider hasta 8,000, de 1 en 1
+local ptsSlider = Auto:NewSlider("Puntos a aplicar", "1 en 1, hasta 8000", 8000, 0, function(val)
+    _G.Point = math.floor(val)
+    ptsSlider:ChangeLabel("Puntos a aplicar: ".._G.Point)
+end)
+
+local statDropdown = Auto:NewDropdown("Elegir Stat", "", {"Fuerza","Energía","Vitalidad","Metal"}, function(vis)
+    _G.Stat = statMap[vis]
+    statDropdown:ChangeLabel("Stat: "..vis)
+end)
+
+Auto:NewButton("Aplicar lento", "1 punto cada 0.2s", function()
+    if not _G.Stat then
+        warn("Selecciona un stat.")
+        return
+    end
+    if _G.Point < 1 then
+        warn("Ingresa al menos 1 punto.")
+        return
+    end
+
+    for i=1,_G.Point do
+        local ok,err = pcall(function()
+            ReplicatedStorage.Events.UpgradeAbility:InvokeServer(_G.Stat)
+        end)
+        if not ok then
+            warn("Error UpgradeAbility:",err)
+            break
+        end
+        task.wait(0.2)
+    end
+    print("✨ Applied ".._G.Point.." points to ".._G.Stat.." (0.2s interval)")
 end)
