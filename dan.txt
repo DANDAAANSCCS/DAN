@@ -131,62 +131,48 @@ Section:NewLabel("Script activo: Punch, TP, AntiKnockback, NoClip, AntiAFK, Chat
 
 task.wait(1)
 
--- ✅ AutoStats UI (Aplica en bloques de 50 puntos, slider hasta 15k)
+-- stats
 local AutoStatsTab = Window:NewTab("AutoStats")
-local Auto = AutoStatsTab:NewSection("Auto distribución de stats")
+local Auto = AutoStatsTab:NewSection("AutoStats")
 
 _G.Point = 0
 _G.Stat = nil
 
 local statMap = {
-    ["Fuerza"]    = "strength",
-    ["Energía"]   = "energy",
-    ["Vitalidad"] = "vitality",
-    ["Metal"]     = "metalSkin"
+	["Fuerza"] = "strength",
+	["Energía"] = "energy",
+	["Vitalidad"] = "vitality",
+	["Metal"] = "metalSkin"
 }
 
--- Slider hasta 15,000, en múltiplos de 50
-autoPoints = Auto:NewSlider("Puntos a aplicar", "Múltiplos de 50", 15000, 0, function(value)
-    _G.Point = math.floor(value / 50) * 50
-    autoPoints:ChangeLabel("Puntos a aplicar: " .. _G.Point)
+Auto:NewSlider("Puntos a aplicar", "Múltiplos de 200", 4000, 0, function(value)
+	_G.Point = math.floor(value / 50) * 50
 end)
 
-autoStatDropdown = Auto:NewDropdown("Elegir Stat", "Selecciona un stat", {"Fuerza", "Energía", "Vitalidad", "Metal"}, function(nombreVisible)
-    _G.Stat = statMap[nombreVisible]
-    autoStatDropdown:ChangeLabel("Stat seleccionado: " .. nombreVisible)
+Auto:NewDropdown("Elegir Stat", "Selecciona un stat", {"Fuerza", "Energía", "Vitalidad", "Metal"}, function(nombreVisible)
+	_G.Stat = statMap[nombreVisible]
 end)
 
-Auto:NewButton("Aplicar puntos", "Aplica en bloques de 50", function()
-    if not _G.Stat then
-        warn("Selecciona un stat válido.")
-        return
-    end
-    if _G.Point < 50 then
-        warn("Mínimo 50 puntos.")
-        return
-    end
+Auto:NewButton("Aplicar puntos", "Modo sexito (50 por hilo)", function()
+	if not _G.Stat then
+		warn("Selecciona un stat válido.")
+		return
+	end
+	if _G.Point < 50 then
+		warn("50 + ")
+		return
+	end
 
-    local total = _G.Point
-    local batches = math.floor(total / 50)
-    for i = 1, batches do
-        spawn(function()
-            for j = 1, 50 do
-                local success, err = pcall(function()
-                    game:GetService("ReplicatedStorage").Events.UpgradeAbility:InvokeServer(_G.Stat)
-                end)
-                if not success then
-                    warn("Error en UpgradeAbility: " .. err)
-                    return
-                end
-            end
-        end)
-        -- Pausa ligera para evitar lag o detección excesiva
-        task.wait(4)
-    end
-
-    print("⚡ Aplicados " .. total .. " puntos a " .. _G.Stat .. " en " .. batches .. " lotes de 50")
+	local lotes = math.floor(_G.Point / 50)
+	for i = 1, lotes do
+		spawn(function()
+			for j = 1, 50 do
+				game:GetService("ReplicatedStorage").Events.UpgradeAbility:InvokeServer(_G.Stat)
+			end
+		end)
+	end
+	
 end)
-
 
 -- orbes de xp
 getgenv().AutoCollectOrbs = true
