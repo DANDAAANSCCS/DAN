@@ -133,9 +133,10 @@ task.wait(1)
 
 -- STATS
 local AutoStatsTab = Window:NewTab("AutoStats")
-local Auto = AutoStatsTab:NewSection("AutoStats")
+local StatSection = AutoStatsTab:NewSection("Auto mejora de habilidades")
+
 StatSection:NewLabel("Habilidades")
-StatSection:NewDropdown("AutoStats", "", {"vitality","healing","strength","energy","flight","speed","climbing","swinging","fireball","frost","lightning","power","telekinesis","shield","laserVision","metalSkin"}, function(currentOption)
+StatSection:NewDropdown("AutoStats", "", {"vitality","strength","energy","metalSkin"}, function(currentOption)
 	selectedstat = currentOption;
 end);
 StatSection:NewToggle("Toggle AutoStats 15", "", function(state)
