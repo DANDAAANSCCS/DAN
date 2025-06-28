@@ -141,7 +141,7 @@ local statMap = {
 }
 
 -- Slider hasta 100,000, en pasos de 2
-Auto:NewSlider("Puntos a aplicar", "Múltiplos de 2", 100000, 0, function(value)
+Auto:NewSlider("Puntos a aplicar", "Múltiplos de 2", 5000, 0, function(value)
 	_G.Point = math.floor(value / 2) * 2
 end)
 
@@ -154,15 +154,15 @@ Auto:NewButton("Aplicar puntos", "Modo ráfaga (2 por hilo)", function()
 		warn("Selecciona un stat válido.")
 		return
 	end
-	if _G.Point < 2 then
-		warn("Mínimo 2 puntos.")
+	if _G.Point < 4 then
+		warn("Mínimo 4 puntos.")
 		return
 	end
 
-	local lotes = math.floor(_G.Point / 2)
+	local lotes = math.floor(_G.Point / 4)
 	for i = 1, lotes do
 		spawn(function()
-			for j = 1, 2 do
+			for j = 1, 4 do
 				game:GetService("ReplicatedStorage").Events.UpgradeAbility:InvokeServer(_G.Stat)
 			end
 		end)
