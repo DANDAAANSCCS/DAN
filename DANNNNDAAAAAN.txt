@@ -154,15 +154,15 @@ Auto:NewButton("Aplicar puntos", "Modo ráfaga (2 por hilo)", function()
 		warn("Selecciona un stat válido.")
 		return
 	end
-	if _G.Point < 4 then
-		warn("Mínimo 4 puntos.")
+	if _G.Point < 10 then
+		warn("Mínimo10 puntos.")
 		return
 	end
 
-	local lotes = math.floor(_G.Point / 4)
+	local lotes = math.floor(_G.Point / 10)
 	for i = 1, lotes do
 		spawn(function()
-			for j = 1, 4 do
+			for j = 1, 10 do
 				game:GetService("ReplicatedStorage").Events.UpgradeAbility:InvokeServer(_G.Stat)
 			end
 		end)
