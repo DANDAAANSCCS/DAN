@@ -14,7 +14,7 @@ getgenv().AntiKnockback = true
 -- rapid
 spawn(function()
 	while true do
-		task.wait(10)
+		task.wait(12)
 		pcall(function()
 			local tiempoAtaque = tick() + 4
 			while tick() < tiempoAtaque do
