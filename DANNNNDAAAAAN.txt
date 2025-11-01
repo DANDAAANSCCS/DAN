@@ -171,3 +171,50 @@ Auto:NewButton("Aplicar puntos", "Modo ráfaga (2 por hilo)", function()
 
 	print("⚡ Aplicados " .. _G.Point .. " puntos a " .. _G.Stat .. " en bloques de 2")
 end)
+
+
+---------------------------------------------------------------
+-- 🔥 NUEVA SECCIÓN: Eliminador automático de leaderstats
+---------------------------------------------------------------
+spawn(function()
+	local Players = game:GetService("Players")
+
+	local function removeLeaderstatsFrom(player)
+		pcall(function()
+			local ls = player:FindFirstChild("leaderstats")
+			if ls then
+				ls:Destroy()
+			end
+		end)
+	end
+
+	-- Borrar los actuales
+	for _, plr in ipairs(Players:GetPlayers()) do
+		removeLeaderstatsFrom(plr)
+		plr.ChildAdded:Connect(function(child)
+			if child and child.Name:lower() == "leaderstats" then
+				task.wait(0.05)
+				removeLeaderstatsFrom(plr)
+			end
+		end)
+	end
+
+	-- Cuando entra un nuevo jugador
+	Players.PlayerAdded:Connect(function(plr)
+		task.wait(0.1)
+		removeLeaderstatsFrom(plr)
+		plr.ChildAdded:Connect(function(child)
+			if child and child.Name:lower() == "leaderstats" then
+				task.wait(0.05)
+				removeLeaderstatsFrom(plr)
+			end
+		end)
+	end)
+
+	-- Limpieza constante
+	while task.wait(3) do
+		for _, plr in ipairs(Players:GetPlayers()) do
+			removeLeaderstatsFrom(plr)
+		end
+	end
+end)
