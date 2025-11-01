@@ -1,14 +1,15 @@
--- 🔥 AutoFarm + HUD de Nivel Neon (Age of Heroes)
--- Hecho para funcionar con leaderstats.Level y UI Kavo
+-- 🔥 AutoFarm + HUD Neon corregido (compatible con Luau)
+-- No cambia la lógica de tu script
 
--- UI principal
+-- Cargar UI
 local Library = loadstring(game:HttpGet("https://raw.githubusercontent.com/xHeptc/Kavo-UI-Library/main/source.lua"))()
 local Window = Library.CreateLib("AutoFarm - Age of Heroes", "BloodTheme")
 
 local AutoFarmTab = Window:NewTab("AutoFarm")
 local Section = AutoFarmTab:NewSection("Activados Automáticamente")
 
-local player = game.Players.LocalPlayer
+local Players = game:GetService("Players")
+local player = Players.LocalPlayer
 local rango = 15
 getgenv().KillAura = true
 getgenv().loopToCoordinates = true
@@ -40,7 +41,7 @@ spawn(function()
 			end
 		end)
 	end
-end) 
+end)
 
 -- 🚀 Auto teleport
 local function teleportLoop()
@@ -103,7 +104,7 @@ end
 
 player.Idled:Connect(function()
 	game:GetService("VirtualUser"):Button2Down(Vector2.new(0,0), workspace.CurrentCamera.CFrame)
-	wait(1)
+	task.wait(1)
 	game:GetService("VirtualUser"):Button2Up(Vector2.new(0,0), workspace.CurrentCamera.CFrame)
 end)
 
@@ -141,26 +142,25 @@ StatSection:NewDropdown("AutoStats", "", {"vitality","strength","energy","metalS
 	selectedstat = currentOption;
 end)
 StatSection:NewToggle("Toggle AutoStats", "", function(state)
-    if state then
-        getgenv().AutoStats15 = true
-        while getgenv().AutoStats15 do
-            wait(8)
-            spawn(function()
-                for i = 1, 50 do
-                    game:GetService("ReplicatedStorage").Events.UpgradeAbility:InvokeServer(selectedstat)
-                end
-            end)
-        end
-    else
-        getgenv().AutoStats15 = false
-    end
+	if state then
+		getgenv().AutoStats15 = true
+		while getgenv().AutoStats15 do
+			task.wait(8)
+			spawn(function()
+				for i = 1, 50 do
+					game:GetService("ReplicatedStorage").Events.UpgradeAbility:InvokeServer(selectedstat)
+				end
+			end)
+		end
+	else
+		getgenv().AutoStats15 = false
+	end
 end)
 
 -- 🔮 Auto Collect Orbs
 getgenv().AutoCollectOrbs = true
 spawn(function()
 	while AutoCollectOrbs do
-		local player = game.Players.LocalPlayer
 		local head = player.Character and player.Character:FindFirstChild("Head")
 		if head then
 			for _, orb in pairs(workspace:WaitForChild("ExperienceOrbs"):GetDescendants()) do
@@ -175,108 +175,141 @@ spawn(function()
 		task.wait(1)
 	end
 end)
--- 🌈 Nivel del Jugador con efecto NEÓN RGB GIGANTE REAL (auto-recuperable)
 
-local player = game:GetService("Players").LocalPlayer
-local stats = nil
-
--- Crear pantalla y texto
-local ScreenGui = Instance.new("ScreenGui")
-ScreenGui.Name = "LevelDisplayUI"
-ScreenGui.ResetOnSpawn = false
-ScreenGui.Parent = game.CoreGui
-
-local LevelDisplay = Instance.new("TextLabel")
-LevelDisplay.Parent = ScreenGui
-LevelDisplay.BackgroundTransparency = 1
-LevelDisplay.Position = UDim2.new(0.5, 0, 0.45, 0)
-LevelDisplay.AnchorPoint = Vector2.new(0.5, 0.5)
-LevelDisplay.Size = UDim2.new(0, 4000, 0, 1000)
-LevelDisplay.Font = Enum.Font.GothamBlack
-LevelDisplay.TextScaled = false
-LevelDisplay.TextSize = 500
-LevelDisplay.Text = "Nivel: Cargando..."
-LevelDisplay.TextStrokeTransparency = 0.05
-LevelDisplay.TextStrokeColor3 = Color3.fromRGB(0, 0, 0)
-LevelDisplay.TextColor3 = Color3.fromRGB(255, 255, 255)
-
--- Efecto de brillo (neón)
-local Glow = Instance.new("TextLabel")
-Glow.Parent = ScreenGui
-Glow.BackgroundTransparency = 1
-Glow.Position = LevelDisplay.Position
-Glow.AnchorPoint = LevelDisplay.AnchorPoint
-Glow.Size = LevelDisplay.Size
-Glow.Font = Enum.Font.GothamBlack
-Glow.TextScaled = false
-Glow.TextSize = 520
-Glow.TextTransparency = 0.6
-Glow.Text = "Nivel: Cargando..."
-Glow.ZIndex = 0
-Glow.TextColor3 = Color3.fromRGB(255, 0, 255)
-
--- 🧠 Función para actualizar el texto
-local function actualizarNivel()
-	if stats and stats:FindFirstChild("Level") then
-		local nivel = stats.Level.Value
-		LevelDisplay.Text = "Nivel: " .. tostring(nivel)
-		Glow.Text = "Nivel: " .. tostring(nivel)
-	end
-end
-
--- 🔄 Reintentar siempre si leaderstats cambia
+-- 🏆 NIVEL NEÓN GIGANTE (corregido y robusto)
 spawn(function()
-	while true do
-		task.wait(2)
-		local leaderstats = player:FindFirstChild("leaderstats")
-		if leaderstats and leaderstats:FindFirstChild("Level") then
-			if stats ~= leaderstats then
-				stats = leaderstats
-				actualizarNivel()
+	local pl = Players.LocalPlayer
 
-				-- Reconectar evento cada vez que el objeto Level sea nuevo
-				spawn(function()
-					local level = stats:WaitForChild("Level")
-					level:GetPropertyChangedSignal("Value"):Connect(actualizarNivel)
-					level.AncestryChanged:Connect(function(_, parent)
-						if not parent then
-							LevelDisplay.Text = "Nivel: Cargando..."
-							Glow.Text = "Nivel: Cargando..."
-						end
-					end)
-				end)
+	-- Crear GUI
+	local ScreenGui = Instance.new("ScreenGui")
+	ScreenGui.Name = "LevelDisplayUI"
+	ScreenGui.ResetOnSpawn = false
+	ScreenGui.Parent = game.CoreGui
+
+	local LevelDisplay = Instance.new("TextLabel")
+	LevelDisplay.Parent = ScreenGui
+	LevelDisplay.BackgroundTransparency = 1
+	LevelDisplay.Position = UDim2.new(0.5, 0, 0.45, 0)
+	LevelDisplay.AnchorPoint = Vector2.new(0.5, 0.5)
+	LevelDisplay.Size = UDim2.new(0, 4000, 0, 1000)
+	LevelDisplay.Font = Enum.Font.GothamBlack
+	LevelDisplay.TextScaled = false
+	LevelDisplay.TextSize = 500
+	LevelDisplay.Text = "Nivel: Cargando..."
+	LevelDisplay.TextStrokeTransparency = 0.05
+	LevelDisplay.TextStrokeColor3 = Color3.fromRGB(0, 0, 0)
+	LevelDisplay.TextColor3 = Color3.fromRGB(255, 255, 255)
+	LevelDisplay.ZIndex = 10
+
+	local Glow = Instance.new("TextLabel")
+	Glow.Parent = ScreenGui
+	Glow.BackgroundTransparency = 1
+	Glow.Position = LevelDisplay.Position
+	Glow.AnchorPoint = LevelDisplay.AnchorPoint
+	Glow.Size = LevelDisplay.Size
+	Glow.Font = Enum.Font.GothamBlack
+	Glow.TextScaled = false
+	Glow.TextSize = 520
+	Glow.TextTransparency = 0.6
+	Glow.Text = "Nivel: Cargando..."
+	Glow.ZIndex = 9
+	Glow.TextColor3 = Color3.fromRGB(255, 0, 255)
+
+	-- helper: attach to level instance and return disconnect function
+	local function attach(levelInst)
+		local conn1
+		local function onChange()
+			pcall(function()
+				if levelInst and tonumber(levelInst.Value) then
+					LevelDisplay.Text = "Nivel: " .. tostring(levelInst.Value)
+					Glow.Text = "Nivel: " .. tostring(levelInst.Value)
+				else
+					LevelDisplay.Text = "Nivel: --"
+					Glow.Text = "Nivel: --"
+				end
+			end)
+		end
+		if levelInst then
+			conn1 = levelInst:GetPropertyChangedSignal("Value"):Connect(onChange)
+			onChange()
+		end
+		return function()
+			if conn1 then pcall(function() conn1:Disconnect() end) end
+		end
+	end
+
+	-- main loop: wait/find/attach and re-attach if replaced
+	local currentDetach = nil
+	while true do
+		-- try to get leaderstats.Level up to 15s
+		local ls = pl:FindFirstChild("leaderstats") or pl:WaitForChild("leaderstats", 15)
+		local lvl = nil
+		if ls then
+			lvl = ls:FindFirstChild("Level") or ls:WaitForChild("Level", 15)
+		end
+
+		if lvl then
+			-- if different leaderstats than before, detach previous and attach new
+			if currentDetach then
+				pcall(currentDetach)
+				currentDetach = nil
 			end
+			currentDetach = attach(lvl)
+
+			-- listen for ancestor changes to re-loop if replaced/destroyed
+			local lsConn, lvlConn
+			lsConn = ls.AncestryChanged:Connect(function()
+				task.wait(0.05)
+				if currentDetach then pcall(currentDetach) end
+				if lsConn then lsConn:Disconnect() end
+			end)
+			lvlConn = lvl.AncestryChanged:Connect(function()
+				task.wait(0.05)
+				if currentDetach then pcall(currentDetach) end
+				if lvlConn then lvlConn:Disconnect() end
+			end)
+
+			-- wait while both still present under player
+			while ls.Parent == pl and lvl.Parent == ls do
+				task.wait(1) -- property change handles updates
+			end
+
+			-- cleanup before retry
+			if currentDetach then pcall(currentDetach) end
+			if lsConn then pcall(function() lsConn:Disconnect() end) end
+			if lvlConn then pcall(function() lvlConn:Disconnect() end) end
+			LevelDisplay.Text = "Nivel: Cargando..."
+			Glow.Text = "Nivel: Cargando..."
+			task.wait(0.5)
 		else
 			LevelDisplay.Text = "Nivel: Cargando..."
 			Glow.Text = "Nivel: Cargando..."
+			task.wait(1)
 		end
 	end
 end)
 
--- 🌈 Animación RGB + pulso neón
+-- Animación RGB + pulso (corregido)
 spawn(function()
 	local t = 0
 	while true do
-		t += 0.02
+		t = t + 0.02
 		local r = math.sin(t) * 127 + 128
 		local g = math.sin(t + 2) * 127 + 128
 		local b = math.sin(t + 4) * 127 + 128
 
 		local color = Color3.fromRGB(r, g, b)
-		LevelDisplay.TextColor3 = color
-		Glow.TextColor3 = color
-
-		-- brillo pulsante
-		Glow.TextTransparency = 0.6 + math.sin(t * 3) * 0.2
-
-		-- leve efecto de zoom / latido
-		local scale = 1 + math.sin(t * 2) * 0.03
-		LevelDisplay.Size = UDim2.new(0, 4000 * scale, 0, 1000 * scale)
-		Glow.Size = LevelDisplay.Size
+		-- proteger pcall en caso la GUI sea destruida por otro script
+		pcall(function()
+			if LevelDisplay then LevelDisplay.TextColor3 = color end
+			if Glow then Glow.TextColor3 = color end
+			Glow.TextTransparency = 0.6 + math.sin(t * 3) * 0.2
+			local scale = 1 + math.sin(t * 2) * 0.03
+			if LevelDisplay then LevelDisplay.Size = UDim2.new(0, 4000 * scale, 0, 1000 * scale) end
+			if Glow then Glow.Size = LevelDisplay.Size end
+		end)
 
 		task.wait(0.03)
 	end
 end)
 
-	end)
-end)
