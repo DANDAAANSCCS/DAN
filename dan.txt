@@ -1,3 +1,183 @@
+mira recuerdas este script, vdd?:
+
+-- 🔥 AutoFarm + HUD de Nivel Neon (Age of Heroes)
+-- Hecho para funcionar con leaderstats.Level y UI Kavo
+
+-- UI principal
+local Library = loadstring(game:HttpGet("https://raw.githubusercontent.com/xHeptc/Kavo-UI-Library/main/source.lua"))()
+local Window = Library.CreateLib("AutoFarm - Age of Heroes", "BloodTheme")
+
+local AutoFarmTab = Window:NewTab("AutoFarm")
+local Section = AutoFarmTab:NewSection("Activados Automáticamente")
+
+local player = game.Players.LocalPlayer
+local rango = 15
+getgenv().KillAura = true
+getgenv().loopToCoordinates = true
+getgenv().AntiKnockback = true
+
+-- ⚔️ Auto punch rápido
+spawn(function()
+	while true do
+		task.wait(12)
+		pcall(function()
+			local tiempoAtaque = tick() + 4
+			while tick() < tiempoAtaque do
+				local myHRP = player.Character and player.Character:FindFirstChild("HumanoidRootPart")
+				if not myHRP then break end
+
+				for _, v in pairs(game.Players:GetPlayers()) do
+					if v ~= player and v.Character and v.Character:FindFirstChild("HumanoidRootPart") then
+						local objetivoHRP = v.Character.HumanoidRootPart
+						local distancia = (myHRP.Position - objetivoHRP.Position).Magnitude
+						local tieneEscudo = v.Character:FindFirstChildOfClass("ForceField") or objetivoHRP:FindFirstChild("Shield") or v.Character:FindFirstChild("Shield")
+						local estaVivo = v.Character:FindFirstChild("Humanoid") and v.Character.Humanoid.Health > 0
+
+						if distancia < rango and not tieneEscudo and estaVivo then
+							game:GetService("ReplicatedStorage").Events.Punch:FireServer(0.4, 0.1, 1)
+						end
+					end
+				end
+				task.wait(0.025)
+			end
+		end)
+	end
+end) 
+
+-- 🚀 Auto teleport
+local function teleportLoop()
+	while getgenv().loopToCoordinates do
+		pcall(function()
+			local character = player.Character or player.CharacterAdded:Wait()
+			local rootPart = character:WaitForChild("HumanoidRootPart", 5)
+			if rootPart then
+				rootPart.CFrame = CFrame.new(650, 779, 284)
+			end
+		end)
+		task.wait(0.5)
+	end
+end
+
+spawn(teleportLoop)
+player.CharacterAdded:Connect(function()
+	if getgenv().loopToCoordinates then
+		spawn(teleportLoop)
+	end
+end)
+
+-- 🛡️ Anti-Knockback
+local LastPosition = nil
+spawn(function()
+	while getgenv().AntiKnockback do
+		task.wait()
+		local char = player.Character
+		if char and char:FindFirstChild("HumanoidRootPart") then
+			local part = char.HumanoidRootPart
+			if part.AssemblyLinearVelocity.Magnitude > 250 or part.AssemblyAngularVelocity.Magnitude > 250 then
+				part.AssemblyLinearVelocity = Vector3.new(0, 0, 0)
+				part.AssemblyAngularVelocity = Vector3.new(0, 0, 0)
+				if LastPosition then
+					part.CFrame = LastPosition
+				end
+			elseif part.AssemblyLinearVelocity.Magnitude < 50 then
+				LastPosition = part.CFrame
+			end
+		end
+	end
+end)
+
+-- 🚫 No Clip
+game:GetService("RunService").Stepped:Connect(function()
+	local char = player.Character
+	if char then
+		for _, part in pairs(char:GetDescendants()) do
+			if part:IsA("BasePart") then
+				part.CanCollide = false
+			end
+		end
+	end
+end)
+
+-- 💤 Anti-AFK
+for _, v in pairs(getconnections(player.Idled)) do
+	v:Disable()
+end
+
+player.Idled:Connect(function()
+	game:GetService("VirtualUser"):Button2Down(Vector2.new(0,0), workspace.CurrentCamera.CFrame)
+	wait(1)
+	game:GetService("VirtualUser"):Button2Up(Vector2.new(0,0), workspace.CurrentCamera.CFrame)
+end)
+
+-- 💬 Chat spam
+local tablaMensajes = {
+	"no me vea",
+	"yo lo veo",
+	"hijoosss, a comeeer",
+	"world no me llega",
+	"a la vuelta mijo",
+	"eso que",
+	"estudia las tablas mijo",
+	"ayer"
+}
+
+spawn(function()
+	while true do
+		task.wait(10)
+		local mensaje = tablaMensajes[math.random(1, #tablaMensajes)]
+		pcall(function()
+			game:GetService("ReplicatedStorage").DefaultChatSystemChatEvents.SayMessageRequest:FireServer(mensaje, "All")
+		end)
+	end
+end)
+
+-- 🪄 Mensaje de UI
+Section:NewLabel("Script activo: Punch, TP, AntiKnockback, NoClip, AntiAFK, Chat spam")
+
+-- 🌟 Auto Stats
+local AutoStatsTab = Window:NewTab("AutoStats")
+local StatSection = AutoStatsTab:NewSection("AutoStats Lento Para Farmer")
+
+StatSection:NewLabel("Habilidades")
+StatSection:NewDropdown("AutoStats", "", {"vitality","strength","energy","metalSkin"}, function(currentOption)
+	selectedstat = currentOption;
+end)
+StatSection:NewToggle("Toggle AutoStats", "", function(state)
+    if state then
+        getgenv().AutoStats15 = true
+        while getgenv().AutoStats15 do
+            wait(8)
+            spawn(function()
+                for i = 1, 50 do
+                    game:GetService("ReplicatedStorage").Events.UpgradeAbility:InvokeServer(selectedstat)
+                end
+            end)
+        end
+    else
+        getgenv().AutoStats15 = false
+    end
+end)
+
+-- 🔮 Auto Collect Orbs
+getgenv().AutoCollectOrbs = true
+spawn(function()
+	while AutoCollectOrbs do
+		local player = game.Players.LocalPlayer
+		local head = player.Character and player.Character:FindFirstChild("Head")
+		if head then
+			for _, orb in pairs(workspace:WaitForChild("ExperienceOrbs"):GetDescendants()) do
+				if orb:IsA("BasePart") and orb:FindFirstChild("TouchInterest") then
+					pcall(function()
+						firetouchinterest(head, orb, 0)
+					end)
+					break
+				end
+			end
+		end
+		task.wait(1)
+	end
+end)
+
 -- 🏆 HUD DEL NIVEL (efecto neón con espera y actualización continua)
 task.spawn(function()
 	local player = game:GetService("Players").LocalPlayer
