@@ -1,21 +1,20 @@
--- 📦 Cargamos la interfaz principal (Kavo UI)
+-- 🌌 Interfaz principal
 local Library = loadstring(game:HttpGet("https://raw.githubusercontent.com/xHeptc/Kavo-UI-Library/main/source.lua"))()
 local Window = Library.CreateLib("AutoFarm - Age of Heroes", "BloodTheme")
 
--- 🧩 Tabs y secciones
 local AutoFarmTab = Window:NewTab("AutoFarm")
 local Section = AutoFarmTab:NewSection("Activados Automáticamente")
 
-----------------------------------------------------------
--- ⚔️ AutoFarm principal
-----------------------------------------------------------
+-- ⚙️ Variables principales
 local player = game.Players.LocalPlayer
 local rango = 15
 getgenv().KillAura = true
 getgenv().loopToCoordinates = true
 getgenv().AntiKnockback = true
 
--- KillAura (ataque rápido)
+----------------------------------------------------------
+-- ⚔️ Auto Punch (KillAura)
+----------------------------------------------------------
 spawn(function()
 	while true do
 		task.wait(12)
@@ -43,7 +42,9 @@ spawn(function()
 	end
 end)
 
--- Teleport Loop
+----------------------------------------------------------
+-- 🌀 Teleport Loop
+----------------------------------------------------------
 local function teleportLoop()
 	while getgenv().loopToCoordinates do
 		pcall(function()
@@ -64,7 +65,9 @@ player.CharacterAdded:Connect(function()
 	end
 end)
 
--- Anti-Knockback
+----------------------------------------------------------
+-- 🛡️ Anti-Knockback
+----------------------------------------------------------
 local LastPosition = nil
 spawn(function()
 	while getgenv().AntiKnockback do
@@ -85,7 +88,9 @@ spawn(function()
 	end
 end)
 
--- NoClip
+----------------------------------------------------------
+-- 🚷 NoClip
+----------------------------------------------------------
 game:GetService("RunService").Stepped:Connect(function()
 	local char = player.Character
 	if char then
@@ -97,7 +102,9 @@ game:GetService("RunService").Stepped:Connect(function()
 	end
 end)
 
--- Anti-AFK
+----------------------------------------------------------
+-- 💤 Anti-AFK
+----------------------------------------------------------
 for _, v in pairs(getconnections(player.Idled)) do
 	v:Disable()
 end
@@ -108,7 +115,9 @@ player.Idled:Connect(function()
 	game:GetService("VirtualUser"):Button2Up(Vector2.new(0,0), workspace.CurrentCamera.CFrame)
 end)
 
--- Chat aleatorio
+----------------------------------------------------------
+-- 💬 Chat Aleatorio
+----------------------------------------------------------
 local tablaMensajes = {
 	"no me vea",
 	"yo lo veo",
@@ -130,17 +139,13 @@ spawn(function()
 	end
 end)
 
-Section:NewLabel("Script activo: Punch, TP, AntiKnockback, NoClip, AntiAFK, Chat spam")
-
 ----------------------------------------------------------
--- ⚙️ AutoStats
+-- 🧬 AutoStats
 ----------------------------------------------------------
 local AutoStatsTab = Window:NewTab("AutoStats")
 local StatSection = AutoStatsTab:NewSection("AutoStats Lento Para Farmer")
 
 StatSection:NewLabel("Habilidades")
-local selectedstat = nil
-
 StatSection:NewDropdown("AutoStats", "", {"vitality","strength","energy","metalSkin"}, function(currentOption)
 	selectedstat = currentOption;
 end)
@@ -162,13 +167,11 @@ StatSection:NewToggle("Toggle AutoStats", "", function(state)
 end)
 
 ----------------------------------------------------------
--- 🔮 Auto Collect XP Orbs
+-- ✨ Auto Collect Orbs
 ----------------------------------------------------------
 getgenv().AutoCollectOrbs = true
-
 spawn(function()
-	while getgenv().AutoCollectOrbs do
-		local player = game.Players.LocalPlayer
+	while AutoCollectOrbs do
 		local head = player.Character and player.Character:FindFirstChild("Head")
 		if head then
 			for _, orb in pairs(workspace:WaitForChild("ExperienceOrbs"):GetDescendants()) do
@@ -185,9 +188,9 @@ spawn(function()
 end)
 
 ----------------------------------------------------------
--- 🏆 HUD de Nivel (Neón gigante y animado)
+-- 🏆 HUD del Nivel (efecto neón)
 ----------------------------------------------------------
-task.wait(1)
+task.wait(2)
 
 local screenGui = Instance.new("ScreenGui")
 screenGui.Name = "LevelHUD"
@@ -203,7 +206,7 @@ levelLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
 levelLabel.TextStrokeTransparency = 0
 levelLabel.Font = Enum.Font.GothamBlack
 levelLabel.TextScaled = true
-levelLabel.Text = "Cargando nivel..."
+levelLabel.Text = "⏳ Cargando nivel..."
 levelLabel.Parent = screenGui
 
 -- Efecto neón
@@ -222,7 +225,7 @@ uiGradient.Color = ColorSequence.new{
 uiGradient.Rotation = 90
 uiGradient.Parent = levelLabel
 
--- Animación de color
+-- Animación del gradiente
 task.spawn(function()
 	while true do
 		for i = 0, 1, 0.01 do
@@ -232,8 +235,7 @@ task.spawn(function()
 	end
 end)
 
--- Actualizar nivel en tiempo real
-local player = game:GetService("Players").LocalPlayer
+-- Actualización del nivel
 local leaderstats = player:WaitForChild("leaderstats")
 local level = leaderstats:WaitForChild("Level")
 
@@ -243,3 +245,6 @@ end
 
 level:GetPropertyChangedSignal("Value"):Connect(updateLevel)
 updateLevel()
+
+----------------------------------------------------------
+Section:NewLabel("Script activo: Punch, TP, AntiKnockback, NoClip, AntiAFK, Chat spam")
