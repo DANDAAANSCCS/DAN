@@ -1,5 +1,3 @@
-mira recuerdas este script, vdd?:
-
 -- 🔥 AutoFarm + HUD de Nivel Neon (Age of Heroes)
 -- Hecho para funcionar con leaderstats.Level y UI Kavo
 
