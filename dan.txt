@@ -176,55 +176,59 @@ spawn(function()
 	end
 end)
 
--- 🏆 HUD DEL NIVEL (efecto neón)
+-- 🏆 HUD DEL NIVEL (efecto neón con actualización automática incluso si cambia el leaderstats)
 task.spawn(function()
 	local player = game:GetService("Players").LocalPlayer
-	local leaderstats = player:WaitForChild("leaderstats", 10)
-	local level = leaderstats and leaderstats:WaitForChild("Level", 10)
+	local screenGui = Instance.new("ScreenGui")
+	screenGui.Name = "LevelHUD"
+	screenGui.ResetOnSpawn = false
+	screenGui.IgnoreGuiInset = true
+	screenGui.Parent = game:GetService("CoreGui")
 
-	if level then
-		local screenGui = Instance.new("ScreenGui")
-		screenGui.Name = "LevelHUD"
-		screenGui.ResetOnSpawn = false
-		screenGui.IgnoreGuiInset = true
-		screenGui.Parent = game:GetService("CoreGui")
+	local levelLabel = Instance.new("TextLabel")
+	levelLabel.Size = UDim2.new(1, 0, 0, 250)
+	levelLabel.Position = UDim2.new(0, 0, 0.05, 0)
+	levelLabel.BackgroundTransparency = 1
+	levelLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+	levelLabel.TextStrokeTransparency = 0
+	levelLabel.Font = Enum.Font.GothamBlack
+	levelLabel.TextScaled = true
+	levelLabel.Text = "🏆 Cargando nivel..."
+	levelLabel.Parent = screenGui
 
-		local levelLabel = Instance.new("TextLabel")
-		levelLabel.Size = UDim2.new(1, 0, 0, 250)
-		levelLabel.Position = UDim2.new(0, 0, 0.05, 0)
-		levelLabel.BackgroundTransparency = 1
-		levelLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
-		levelLabel.TextStrokeTransparency = 0
-		levelLabel.Font = Enum.Font.GothamBlack
-		levelLabel.TextScaled = true
-		levelLabel.Text = "🏆 Nivel: " .. tostring(level.Value)
-		levelLabel.Parent = screenGui
+	local uiStroke = Instance.new("UIStroke")
+	uiStroke.Color = Color3.fromRGB(255, 0, 255)
+	uiStroke.Thickness = 5
+	uiStroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Outside
+	uiStroke.Parent = levelLabel
 
-		local uiStroke = Instance.new("UIStroke")
-		uiStroke.Color = Color3.fromRGB(255, 0, 255)
-		uiStroke.Thickness = 5
-		uiStroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Outside
-		uiStroke.Parent = levelLabel
+	local uiGradient = Instance.new("UIGradient")
+	uiGradient.Color = ColorSequence.new{
+		ColorSequenceKeypoint.new(0, Color3.fromRGB(255, 0, 255)),
+		ColorSequenceKeypoint.new(0.5, Color3.fromRGB(0, 255, 255)),
+		ColorSequenceKeypoint.new(1, Color3.fromRGB(255, 255, 0))
+	}
+	uiGradient.Rotation = 90
+	uiGradient.Parent = levelLabel
 
-		local uiGradient = Instance.new("UIGradient")
-		uiGradient.Color = ColorSequence.new{
-			ColorSequenceKeypoint.new(0, Color3.fromRGB(255, 0, 255)),
-			ColorSequenceKeypoint.new(0.5, Color3.fromRGB(0, 255, 255)),
-			ColorSequenceKeypoint.new(1, Color3.fromRGB(255, 255, 0))
-		}
-		uiGradient.Rotation = 90
-		uiGradient.Parent = levelLabel
+	task.spawn(function()
+		while task.wait(0.05) do
+			uiGradient.Rotation = (uiGradient.Rotation + 3) % 360
+		end
+	end)
 
-		task.spawn(function()
-			while task.wait(0.05) do
-				uiGradient.Rotation = (uiGradient.Rotation + 3) % 360
-			end
-		end)
-
-		level:GetPropertyChangedSignal("Value"):Connect(function()
-			levelLabel.Text = "🏆 Nivel: " .. tostring(level.Value)
-		end)
-	else
-		warn("⚠️ No se encontró leaderstats o Level.")
-	end
+	-- 🔁 función para actualizar continuamente el nivel
+	task.spawn(function()
+		while task.wait(1) do
+			pcall(function()
+				local leaderstats = player:FindFirstChild("leaderstats")
+				local level = leaderstats and leaderstats:FindFirstChild("Level")
+				if level and tonumber(level.Value) then
+					levelLabel.Text = "🏆 Nivel: " .. tostring(level.Value)
+				else
+					levelLabel.Text = "🏆 Nivel: --"
+				end
+			end)
+		end
+	end)
 end)
