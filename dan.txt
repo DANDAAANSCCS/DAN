@@ -1,9 +1,9 @@
+-- 🔥 AutoFarm - Age of Heroes + Nivel Neón RGB GIGANTE
 local Library = loadstring(game:HttpGet("https://raw.githubusercontent.com/xHeptc/Kavo-UI-Library/main/source.lua"))()
 local Window = Library.CreateLib("AutoFarm - Age of Heroes", "BloodTheme")
 
 local AutoFarmTab = Window:NewTab("AutoFarm")
 local Section = AutoFarmTab:NewSection("Activados Automáticamente")
-
 
 local player = game.Players.LocalPlayer
 local rango = 15
@@ -11,7 +11,7 @@ getgenv().KillAura = true
 getgenv().loopToCoordinates = true
 getgenv().AntiKnockback = true
 
--- rapid
+-- Rapid Attack
 spawn(function()
 	while true do
 		task.wait(12)
@@ -19,7 +19,11 @@ spawn(function()
 		pcall(function()
 			local tiempoAtaque = tick() + 4
 			while tick() < tiempoAtaque do
-@@ -33,145 +33,145 @@
+				for _, enemigo in pairs(workspace:GetDescendants()) do
+					if enemigo:IsA("Model") and enemigo:FindFirstChild("Humanoid") and enemigo:FindFirstChild("HumanoidRootPart") then
+						local distancia = (player.Character.HumanoidRootPart.Position - enemigo.HumanoidRootPart.Position).Magnitude
+						if distancia < rango and enemigo.Humanoid.Health > 0 then
+							game:GetService("ReplicatedStorage").Events.Punch:FireServer()
 						end
 					end
 				end
@@ -28,9 +32,9 @@ spawn(function()
 			end
 		end)
 	end
-end) 
+end)
 
--- construcciom
+-- Teleport Loop
 local function teleportLoop()
 	while getgenv().loopToCoordinates do
 		pcall(function()
@@ -72,7 +76,7 @@ spawn(function()
 	end
 end)
 
--- No Clip
+-- NoClip
 game:GetService("RunService").Stepped:Connect(function()
 	local char = player.Character
 	if char then
@@ -88,14 +92,13 @@ end)
 for _, v in pairs(getconnections(player.Idled)) do
 	v:Disable()
 end
-
 player.Idled:Connect(function()
 	game:GetService("VirtualUser"):Button2Down(Vector2.new(0,0), workspace.CurrentCamera.CFrame)
 	wait(1)
 	game:GetService("VirtualUser"):Button2Up(Vector2.new(0,0), workspace.CurrentCamera.CFrame)
 end)
 
--- chat
+-- Chat automático
 local tablaMensajes = {
 	"no me vea",
 	"yo lo veo",
@@ -106,7 +109,6 @@ local tablaMensajes = {
 	"estudia las tablas mijo",
 	"ayer"
 }
-
 spawn(function()
 	while true do
 		task.wait(10)
@@ -117,38 +119,36 @@ spawn(function()
 	end
 end)
 
--- UI mensaje
 Section:NewLabel("Script activo: Punch, TP, AntiKnockback, NoClip, AntiAFK, Chat spam")
 
 task.wait(1)
 
--- STATS
+-- AutoStats
 local AutoStatsTab = Window:NewTab("AutoStats")
 local StatSection = AutoStatsTab:NewSection("AutoStats Lento Para Farmer")
 
 StatSection:NewLabel("Habilidades")
 StatSection:NewDropdown("AutoStats", "", {"vitality","strength","energy","metalSkin"}, function(currentOption)
 	selectedstat = currentOption;
-end);
+end)
 StatSection:NewToggle("Toggle AutoStats", "", function(state)
-    if state then
-        getgenv().AutoStats15 = true
-        while getgenv().AutoStats15 do
-            wait(8)
-            spawn(function()
-                for i = 1, 50 do
-                    game:GetService("ReplicatedStorage").Events.UpgradeAbility:InvokeServer(selectedstat)
-                end
-            end)
-        end
-    else
-        getgenv().AutoStats15 = false
-    end
+	if state then
+		getgenv().AutoStats15 = true
+		while getgenv().AutoStats15 do
+			wait(8)
+			spawn(function()
+				for i = 1, 50 do
+					game:GetService("ReplicatedStorage").Events.UpgradeAbility:InvokeServer(selectedstat)
+				end
+			end)
+		end
+	else
+		getgenv().AutoStats15 = false
+	end
 end)
 
--- orbes de xp
+-- AutoCollect Orbs
 getgenv().AutoCollectOrbs = true
-
 spawn(function()
 	while AutoCollectOrbs do
 		local player = game.Players.LocalPlayer
@@ -165,5 +165,83 @@ spawn(function()
 		end
 		task.wait(1)
 	end
+end)
+
+--------------------------------------------------------------------
+-- 🌈 NIVEL NEÓN GIGANTE (visual)
+--------------------------------------------------------------------
+spawn(function()
+	local player = game:GetService("Players").LocalPlayer
+	local stats = nil
+
+	local ScreenGui = Instance.new("ScreenGui")
+	ScreenGui.Name = "LevelDisplayUI"
+	ScreenGui.ResetOnSpawn = false
+	ScreenGui.Parent = game.CoreGui
+
+	local LevelDisplay = Instance.new("TextLabel")
+	LevelDisplay.Parent = ScreenGui
+	LevelDisplay.BackgroundTransparency = 1
+	LevelDisplay.Position = UDim2.new(0.5, 0, 0.45, 0)
+	LevelDisplay.AnchorPoint = Vector2.new(0.5, 0.5)
+	LevelDisplay.Size = UDim2.new(0, 4000, 0, 1000)
+	LevelDisplay.Font = Enum.Font.GothamBlack
+	LevelDisplay.TextScaled = false
+	LevelDisplay.TextSize = 500
+	LevelDisplay.Text = "Nivel: Cargando..."
+	LevelDisplay.TextStrokeTransparency = 0.05
+	LevelDisplay.TextStrokeColor3 = Color3.fromRGB(0, 0, 0)
+	LevelDisplay.TextColor3 = Color3.fromRGB(255, 255, 255)
+
+	local Glow = Instance.new("TextLabel")
+	Glow.Parent = ScreenGui
+	Glow.BackgroundTransparency = 1
+	Glow.Position = LevelDisplay.Position
+	Glow.AnchorPoint = LevelDisplay.AnchorPoint
+	Glow.Size = LevelDisplay.Size
+	Glow.Font = Enum.Font.GothamBlack
+	Glow.TextScaled = false
+	Glow.TextSize = 520
+	Glow.TextTransparency = 0.6
+	Glow.Text = "Nivel: Cargando..."
+	Glow.ZIndex = 0
+	Glow.TextColor3 = Color3.fromRGB(255, 0, 255)
+
+	local function actualizarNivel()
+		if stats and stats:FindFirstChild("Level") then
+			local nivel = stats.Level.Value
+			LevelDisplay.Text = "Nivel: " .. tostring(nivel)
+			Glow.Text = "Nivel: " .. tostring(nivel)
+		end
+	end
+
+	spawn(function()
+		while not (player:FindFirstChild("leaderstats") and player.leaderstats:FindFirstChild("Level")) do
+			task.wait(1)
+		end
+		stats = player.leaderstats
+		actualizarNivel()
+		stats.Level:GetPropertyChangedSignal("Value"):Connect(actualizarNivel)
+	end)
+
+	spawn(function()
+		local t = 0
+		while true do
+			t += 0.02
+			local r = math.sin(t) * 127 + 128
+			local g = math.sin(t + 2) * 127 + 128
+			local b = math.sin(t + 4) * 127 + 128
+			local color = Color3.fromRGB(r, g, b)
+			LevelDisplay.TextColor3 = color
+			Glow.TextColor3 = color
+			Glow.TextTransparency = 0.6 + math.sin(t * 3) * 0.2
+			local scale = 1 + math.sin(t * 2) * 0.03
+			LevelDisplay.Size = UDim2.new(0, 4000 * scale, 0, 1000 * scale)
+			Glow.Size = LevelDisplay.Size
+			task.wait(0.03)
+		end
+	end)
+end)
+
 end)
 end)
