@@ -1,17 +1,21 @@
--- 🔥 AutoFarm - Age of Heroes + Nivel Neón RGB GIGANTE
+-- 📦 Cargamos la interfaz principal (Kavo UI)
 local Library = loadstring(game:HttpGet("https://raw.githubusercontent.com/xHeptc/Kavo-UI-Library/main/source.lua"))()
 local Window = Library.CreateLib("AutoFarm - Age of Heroes", "BloodTheme")
 
+-- 🧩 Tabs y secciones
 local AutoFarmTab = Window:NewTab("AutoFarm")
 local Section = AutoFarmTab:NewSection("Activados Automáticamente")
 
+----------------------------------------------------------
+-- ⚔️ AutoFarm principal
+----------------------------------------------------------
 local player = game.Players.LocalPlayer
 local rango = 15
 getgenv().KillAura = true
 getgenv().loopToCoordinates = true
 getgenv().AntiKnockback = true
 
--- rapid
+-- KillAura (ataque rápido)
 spawn(function()
 	while true do
 		task.wait(12)
@@ -39,7 +43,7 @@ spawn(function()
 	end
 end)
 
--- construcciom
+-- Teleport Loop
 local function teleportLoop()
 	while getgenv().loopToCoordinates do
 		pcall(function()
@@ -81,7 +85,7 @@ spawn(function()
 	end
 end)
 
--- No Clip
+-- NoClip
 game:GetService("RunService").Stepped:Connect(function()
 	local char = player.Character
 	if char then
@@ -104,7 +108,7 @@ player.Idled:Connect(function()
 	game:GetService("VirtualUser"):Button2Up(Vector2.new(0,0), workspace.CurrentCamera.CFrame)
 end)
 
--- chat
+-- Chat aleatorio
 local tablaMensajes = {
 	"no me vea",
 	"yo lo veo",
@@ -126,40 +130,44 @@ spawn(function()
 	end
 end)
 
--- UI mensaje
 Section:NewLabel("Script activo: Punch, TP, AntiKnockback, NoClip, AntiAFK, Chat spam")
 
-task.wait(1)
-
--- STATS
+----------------------------------------------------------
+-- ⚙️ AutoStats
+----------------------------------------------------------
 local AutoStatsTab = Window:NewTab("AutoStats")
 local StatSection = AutoStatsTab:NewSection("AutoStats Lento Para Farmer")
 
 StatSection:NewLabel("Habilidades")
+local selectedstat = nil
+
 StatSection:NewDropdown("AutoStats", "", {"vitality","strength","energy","metalSkin"}, function(currentOption)
 	selectedstat = currentOption;
-end);
-StatSection:NewToggle("Toggle AutoStats", "", function(state)
-    if state then
-        getgenv().AutoStats15 = true
-        while getgenv().AutoStats15 do
-            wait(8)
-            spawn(function()
-                for i = 1, 50 do
-                    game:GetService("ReplicatedStorage").Events.UpgradeAbility:InvokeServer(selectedstat)
-                end
-            end)
-        end
-    else
-        getgenv().AutoStats15 = false
-    end
 end)
 
--- orbes de xp
+StatSection:NewToggle("Toggle AutoStats", "", function(state)
+	if state then
+		getgenv().AutoStats15 = true
+		while getgenv().AutoStats15 do
+			wait(8)
+			spawn(function()
+				for i = 1, 50 do
+					game:GetService("ReplicatedStorage").Events.UpgradeAbility:InvokeServer(selectedstat)
+				end
+			end)
+		end
+	else
+		getgenv().AutoStats15 = false
+	end
+end)
+
+----------------------------------------------------------
+-- 🔮 Auto Collect XP Orbs
+----------------------------------------------------------
 getgenv().AutoCollectOrbs = true
 
 spawn(function()
-	while AutoCollectOrbs do
+	while getgenv().AutoCollectOrbs do
 		local player = game.Players.LocalPlayer
 		local head = player.Character and player.Character:FindFirstChild("Head")
 		if head then
@@ -176,84 +184,62 @@ spawn(function()
 	end
 end)
 
---------------------------------------------------------------------
--- 🌈 NIVEL NEÓN GIGANTE (display centrado con RGB animado)
---------------------------------------------------------------------
-spawn(function()
-	local player = game:GetService("Players").LocalPlayer
-	local stats = nil
+----------------------------------------------------------
+-- 🏆 HUD de Nivel (Neón gigante y animado)
+----------------------------------------------------------
+task.wait(1)
 
-	local ScreenGui = Instance.new("ScreenGui")
-	ScreenGui.Name = "LevelDisplayUI"
-	ScreenGui.ResetOnSpawn = false
-	ScreenGui.IgnoreGuiInset = true
-	ScreenGui.Parent = game.CoreGui
+local screenGui = Instance.new("ScreenGui")
+screenGui.Name = "LevelHUD"
+screenGui.ResetOnSpawn = false
+screenGui.IgnoreGuiInset = true
+screenGui.Parent = game:GetService("CoreGui")
 
-	local LevelDisplay = Instance.new("TextLabel")
-	LevelDisplay.Parent = ScreenGui
-	LevelDisplay.BackgroundTransparency = 1
-	LevelDisplay.Position = UDim2.new(0.5, 0, 0.45, 0)
-	LevelDisplay.AnchorPoint = Vector2.new(0.5, 0.5)
-	LevelDisplay.Size = UDim2.new(0, 4000, 0, 1000)
-	LevelDisplay.Font = Enum.Font.GothamBlack
-	LevelDisplay.TextScaled = false
-	LevelDisplay.TextSize = 500
-	LevelDisplay.Text = "Nivel: Cargando..."
-	LevelDisplay.TextStrokeTransparency = 0.05
-	LevelDisplay.TextStrokeColor3 = Color3.fromRGB(0, 0, 0)
-	LevelDisplay.TextColor3 = Color3.fromRGB(255, 255, 255)
-	LevelDisplay.ZIndex = 10
+local levelLabel = Instance.new("TextLabel")
+levelLabel.Size = UDim2.new(1, 0, 0, 250)
+levelLabel.Position = UDim2.new(0, 0, 0.05, 0)
+levelLabel.BackgroundTransparency = 1
+levelLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+levelLabel.TextStrokeTransparency = 0
+levelLabel.Font = Enum.Font.GothamBlack
+levelLabel.TextScaled = true
+levelLabel.Text = "Cargando nivel..."
+levelLabel.Parent = screenGui
 
-	local Glow = Instance.new("TextLabel")
-	Glow.Parent = ScreenGui
-	Glow.BackgroundTransparency = 1
-	Glow.Position = LevelDisplay.Position
-	Glow.AnchorPoint = LevelDisplay.AnchorPoint
-	Glow.Size = LevelDisplay.Size
-	Glow.Font = Enum.Font.GothamBlack
-	Glow.TextScaled = false
-	Glow.TextSize = 520
-	Glow.TextTransparency = 0.6
-	Glow.Text = "Nivel: Cargando..."
-	Glow.ZIndex = 9
-	Glow.TextColor3 = Color3.fromRGB(255, 0, 255)
+-- Efecto neón
+local uiStroke = Instance.new("UIStroke")
+uiStroke.Color = Color3.fromRGB(255, 0, 255)
+uiStroke.Thickness = 4
+uiStroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Outside
+uiStroke.Parent = levelLabel
 
-	local function actualizarNivel()
-		if stats and stats:FindFirstChild("Level") then
-			local nivel = stats.Level.Value
-			LevelDisplay.Text = "Nivel: " .. tostring(nivel)
-			Glow.Text = "Nivel: " .. tostring(nivel)
+local uiGradient = Instance.new("UIGradient")
+uiGradient.Color = ColorSequence.new{
+	ColorSequenceKeypoint.new(0, Color3.fromRGB(255, 0, 255)),
+	ColorSequenceKeypoint.new(0.5, Color3.fromRGB(0, 255, 255)),
+	ColorSequenceKeypoint.new(1, Color3.fromRGB(255, 255, 0))
+}
+uiGradient.Rotation = 90
+uiGradient.Parent = levelLabel
+
+-- Animación de color
+task.spawn(function()
+	while true do
+		for i = 0, 1, 0.01 do
+			uiGradient.Rotation = i * 360
+			task.wait(0.05)
 		end
 	end
-
-	spawn(function()
-		while not (player:FindFirstChild("leaderstats") and player.leaderstats:FindFirstChild("Level")) do
-			task.wait(1)
-		end
-		stats = player.leaderstats
-		actualizarNivel()
-		stats.Level:GetPropertyChangedSignal("Value"):Connect(actualizarNivel)
-	end)
-
-	-- 🌈 efecto RGB + pulso
-	spawn(function()
-		local t = 0
-		while true do
-			t += 0.02
-			local r = math.sin(t) * 127 + 128
-			local g = math.sin(t + 2) * 127 + 128
-			local b = math.sin(t + 4) * 127 + 128
-			local color = Color3.fromRGB(r, g, b)
-			LevelDisplay.TextColor3 = color
-			Glow.TextColor3 = color
-			Glow.TextTransparency = 0.6 + math.sin(t * 3) * 0.2
-			local scale = 1 + math.sin(t * 2) * 0.03
-			LevelDisplay.Size = UDim2.new(0, 4000 * scale, 0, 1000 * scale)
-			Glow.Size = LevelDisplay.Size
-			task.wait(0.03)
-		end
-	end)
 end)
 
-end)
-end)
+-- Actualizar nivel en tiempo real
+local player = game:GetService("Players").LocalPlayer
+local leaderstats = player:WaitForChild("leaderstats")
+local level = leaderstats:WaitForChild("Level")
+
+local function updateLevel()
+	levelLabel.Text = "🏆 Nivel: " .. tostring(level.Value)
+end
+
+level:GetPropertyChangedSignal("Value"):Connect(updateLevel)
+updateLevel()
