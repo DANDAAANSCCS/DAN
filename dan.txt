@@ -175,80 +175,108 @@ spawn(function()
 		task.wait(1)
 	end
 end)
+-- 🌈 Nivel del Jugador con efecto NEÓN RGB GIGANTE REAL (auto-recuperable)
 
--- 🏆 HUD DEL NIVEL (efecto neón con espera y actualización continua)
-task.spawn(function()
-	local player = game:GetService("Players").LocalPlayer
-	local screenGui = Instance.new("ScreenGui")
-	screenGui.Name = "LevelHUD"
-	screenGui.ResetOnSpawn = false
-	screenGui.IgnoreGuiInset = true
-	screenGui.Parent = game:GetService("CoreGui")
+local player = game:GetService("Players").LocalPlayer
+local stats = nil
 
-	local levelLabel = Instance.new("TextLabel")
-	levelLabel.Size = UDim2.new(1, 0, 0, 250)
-	levelLabel.Position = UDim2.new(0, 0, 0.05, 0)
-	levelLabel.BackgroundTransparency = 1
-	levelLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
-	levelLabel.TextStrokeTransparency = 0
-	levelLabel.Font = Enum.Font.GothamBlack
-	levelLabel.TextScaled = true
-	levelLabel.Text = "🏆 Cargando nivel..."
-	levelLabel.Parent = screenGui
+-- Crear pantalla y texto
+local ScreenGui = Instance.new("ScreenGui")
+ScreenGui.Name = "LevelDisplayUI"
+ScreenGui.ResetOnSpawn = false
+ScreenGui.Parent = game.CoreGui
 
-	local uiStroke = Instance.new("UIStroke")
-	uiStroke.Color = Color3.fromRGB(255, 0, 255)
-	uiStroke.Thickness = 5
-	uiStroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Outside
-	uiStroke.Parent = levelLabel
+local LevelDisplay = Instance.new("TextLabel")
+LevelDisplay.Parent = ScreenGui
+LevelDisplay.BackgroundTransparency = 1
+LevelDisplay.Position = UDim2.new(0.5, 0, 0.45, 0)
+LevelDisplay.AnchorPoint = Vector2.new(0.5, 0.5)
+LevelDisplay.Size = UDim2.new(0, 4000, 0, 1000)
+LevelDisplay.Font = Enum.Font.GothamBlack
+LevelDisplay.TextScaled = false
+LevelDisplay.TextSize = 500
+LevelDisplay.Text = "Nivel: Cargando..."
+LevelDisplay.TextStrokeTransparency = 0.05
+LevelDisplay.TextStrokeColor3 = Color3.fromRGB(0, 0, 0)
+LevelDisplay.TextColor3 = Color3.fromRGB(255, 255, 255)
 
-	local uiGradient = Instance.new("UIGradient")
-	uiGradient.Color = ColorSequence.new{
-		ColorSequenceKeypoint.new(0, Color3.fromRGB(255, 0, 255)),
-		ColorSequenceKeypoint.new(0.5, Color3.fromRGB(0, 255, 255)),
-		ColorSequenceKeypoint.new(1, Color3.fromRGB(255, 255, 0))
-	}
-	uiGradient.Rotation = 90
-	uiGradient.Parent = levelLabel
+-- Efecto de brillo (neón)
+local Glow = Instance.new("TextLabel")
+Glow.Parent = ScreenGui
+Glow.BackgroundTransparency = 1
+Glow.Position = LevelDisplay.Position
+Glow.AnchorPoint = LevelDisplay.AnchorPoint
+Glow.Size = LevelDisplay.Size
+Glow.Font = Enum.Font.GothamBlack
+Glow.TextScaled = false
+Glow.TextSize = 520
+Glow.TextTransparency = 0.6
+Glow.Text = "Nivel: Cargando..."
+Glow.ZIndex = 0
+Glow.TextColor3 = Color3.fromRGB(255, 0, 255)
 
-	task.spawn(function()
-		while task.wait(0.05) do
-			uiGradient.Rotation = (uiGradient.Rotation + 3) % 360
-		end
-	end)
-
-	-- ⏳ Espera hasta que aparezca el leaderstats y Level
-	local leaderstats
-	local level
-	for i = 1, 15 do
-		leaderstats = player:FindFirstChild("leaderstats")
-		if leaderstats then
-			level = leaderstats:FindFirstChild("Level")
-			if level then break end
-		end
-		task.wait(1)
+-- 🧠 Función para actualizar el texto
+local function actualizarNivel()
+	if stats and stats:FindFirstChild("Level") then
+		local nivel = stats.Level.Value
+		LevelDisplay.Text = "Nivel: " .. tostring(nivel)
+		Glow.Text = "Nivel: " .. tostring(nivel)
 	end
+end
 
-	if not level then
-		levelLabel.Text = "⚠️ No se encontró el nivel"
-		return
-	end
+-- 🔄 Reintentar siempre si leaderstats cambia
+spawn(function()
+	while true do
+		task.wait(2)
+		local leaderstats = player:FindFirstChild("leaderstats")
+		if leaderstats and leaderstats:FindFirstChild("Level") then
+			if stats ~= leaderstats then
+				stats = leaderstats
+				actualizarNivel()
 
-	-- 📊 Mostrar nivel inicial
-	levelLabel.Text = "🏆 Nivel: " .. tostring(level.Value)
-
-	-- 🔁 Actualizar cada segundo (por si el objeto cambia o se reemplaza)
-	task.spawn(function()
-		while task.wait(1) do
-			pcall(function()
-				local ls = player:FindFirstChild("leaderstats")
-				local lvl = ls and ls:FindFirstChild("Level")
-				if lvl and tonumber(lvl.Value) then
-					levelLabel.Text = "🏆 Nivel: " .. tostring(lvl.Value)
-				else
-					levelLabel.Text = "🏆 Nivel: --"
-				end
-			end)
+				-- Reconectar evento cada vez que el objeto Level sea nuevo
+				spawn(function()
+					local level = stats:WaitForChild("Level")
+					level:GetPropertyChangedSignal("Value"):Connect(actualizarNivel)
+					level.AncestryChanged:Connect(function(_, parent)
+						if not parent then
+							LevelDisplay.Text = "Nivel: Cargando..."
+							Glow.Text = "Nivel: Cargando..."
+						end
+					end)
+				end)
+			end
+		else
+			LevelDisplay.Text = "Nivel: Cargando..."
+			Glow.Text = "Nivel: Cargando..."
 		end
+	end
+end)
+
+-- 🌈 Animación RGB + pulso neón
+spawn(function()
+	local t = 0
+	while true do
+		t += 0.02
+		local r = math.sin(t) * 127 + 128
+		local g = math.sin(t + 2) * 127 + 128
+		local b = math.sin(t + 4) * 127 + 128
+
+		local color = Color3.fromRGB(r, g, b)
+		LevelDisplay.TextColor3 = color
+		Glow.TextColor3 = color
+
+		-- brillo pulsante
+		Glow.TextTransparency = 0.6 + math.sin(t * 3) * 0.2
+
+		-- leve efecto de zoom / latido
+		local scale = 1 + math.sin(t * 2) * 0.03
+		LevelDisplay.Size = UDim2.new(0, 4000 * scale, 0, 1000 * scale)
+		Glow.Size = LevelDisplay.Size
+
+		task.wait(0.03)
+	end
+end)
+
 	end)
 end)
