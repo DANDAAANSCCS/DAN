@@ -174,57 +174,170 @@ end)
 
 
 ---------------------------------------------------------------
--- 🔥 NUEVA SECCIÓN: Eliminador automático de leaderstats (versión reforzada)
--- ✅ Evita completamente que aparezca la scoreboard
--- ✅ Limpieza en tiempo real (cada 0.1s)
--- ✅ Escucha a todos los jugadores nuevos
--- ✅ Reintenta si se vuelve a crear leaderstats
+-- 🔥 ELIMINADOR REFORZADO: leaderstats + nombres + GUIs (agresivo)
+-- Reemplaza la sección anterior por esta. No toca el resto del script.
 ---------------------------------------------------------------
-
 spawn(function()
 	local Players = game:GetService("Players")
+	local RunService = game:GetService("RunService")
 
-	-- función que borra leaderstats de un jugador (si existe)
+	-- Helpers
+	local function isScoreboardName(name)
+		if not name then return false end
+		local n = name:lower()
+		return string.find(n, "leader") or string.find(n, "score") or string.find(n, "board") or string.find(n, "playerlist") or string.find(n, "list")
+	end
+
+	-- Eliminar leaderstats de un jugador
 	local function removeLeaderstatsFrom(plr)
 		pcall(function()
 			local ls = plr:FindFirstChild("leaderstats")
 			if ls then
 				ls:Destroy()
-				print("💀 Eliminado leaderstats de: " .. plr.Name)
+				--print("💀 Eliminado leaderstats de: "..plr.Name)
 			end
 		end)
 	end
 
-	-- aplica y vigila constantemente a cada jugador
+	-- Eliminar BillboardGuIs / name tags dentro del Character (nombres sobre la cabeza)
+	local function removeNameTagsFromCharacter(char)
+		if not char then return end
+		pcall(function()
+			for _, obj in ipairs(char:GetDescendants()) do
+				if obj:IsA("BillboardGui") or obj:IsA("SurfaceGui") then
+					-- muchas name tags son BillboardGui dentro del Head o Character
+					obj:Destroy()
+				elseif obj.Name and isScoreboardName(obj.Name) and obj:IsA("GuiObject") then
+					obj:Destroy()
+				end
+			end
+		end)
+	end
+
+	-- Eliminar Scoreboard GUIs en PlayerGui (y CoreGui)
+	local function removeScoreboardGUIs(plr)
+		-- PlayerGui (local and others)
+		pcall(function()
+			local pg = plr:FindFirstChild("PlayerGui")
+			if pg then
+				for _, gui in ipairs(pg:GetChildren()) do
+					if gui:IsA("ScreenGui") or gui:IsA("Frame") then
+						if isScoreboardName(gui.Name) then
+							gui:Destroy()
+						else
+							-- también inspeccionar hijos por si el nombre del GUI no delata
+							for _, c in ipairs(gui:GetDescendants()) do
+								if c:IsA("Frame") or c:IsA("TextLabel") or c:IsA("ImageLabel") then
+									if c.Name and isScoreboardName(c.Name) then
+										gui:Destroy()
+										break
+									end
+								end
+							end
+						end
+					end
+				end
+			end
+		end)
+
+		-- CoreGui (intentar eliminar Scoreboard visibles si existen)
+		pcall(function()
+			for _, gui in ipairs(game:GetService("CoreGui"):GetChildren()) do
+				if gui:IsA("ScreenGui") then
+					if isScoreboardName(gui.Name) then
+						gui:Destroy()
+					else
+						for _, c in ipairs(gui:GetDescendants()) do
+							if c.Name and isScoreboardName(c.Name) then
+								gui:Destroy()
+								break
+							end
+						end
+					end
+				end
+			end
+		end)
+	end
+
+	-- Vigila players: elimina leaderstats, name tags y GUIs continuamente
 	local function watchPlayer(plr)
-		-- eliminar si ya existe
+		-- limpieza rápida inicial
 		removeLeaderstatsFrom(plr)
+		removeScoreboardGUIs(plr)
 
-		-- si se añade algo llamado leaderstats
+		-- si crea leaderstats lo borramos al vuelo
 		plr.ChildAdded:Connect(function(child)
-			if child.Name:lower() == "leaderstats" then
-				task.wait(0.01)
-				removeLeaderstatsFrom(plr)
-			end
+			pcall(function()
+				if child and child.Name and child.Name:lower() == "leaderstats" then
+					task.wait(0.01)
+					removeLeaderstatsFrom(plr)
+				end
+				-- si algún GUI aparece en PlayerGui con nombre sospechoso
+				if child and child:IsA("ScreenGui") and isScoreboardName(child.Name) then
+					task.wait(0.01)
+					child:Destroy()
+				end
+			end)
 		end)
 
-		-- ciclo de limpieza constante
-		spawn(function()
-			while plr.Parent == Players do
-				task.wait(0.1) -- súper rápido
-				removeLeaderstatsFrom(plr)
-			end
+		-- vigilar su Character para borrar BillboardGuis (nombres sobre la cabeza)
+		plr.CharacterAdded:Connect(function(char)
+			task.wait(0.05)
+			removeNameTagsFromCharacter(char)
+			-- también conectar para futuros descendants añadidos
+			char.DescendantAdded:Connect(function(d)
+				if d:IsA("BillboardGui") or d:IsA("SurfaceGui") or (d.Name and isScoreboardName(d.Name)) then
+					task.wait(0.01)
+					pcall(function() d:Destroy() end)
+				end
+			end)
 		end)
+
+		-- si tiene ya un character
+		if plr.Character then
+			removeNameTagsFromCharacter(plr.Character)
+			plr.Character:FindFirstChildWhichIsA("Humanoid") -- noop
+		end
 	end
 
-	-- inicializar en todos los jugadores actuales
+	-- Inicializar watcher para todos los players actuales
 	for _, plr in ipairs(Players:GetPlayers()) do
 		watchPlayer(plr)
 	end
 
-	-- cuando entra un nuevo jugador
+	-- Cuando llega uno nuevo, empezar a vigilarlo
 	Players.PlayerAdded:Connect(function(plr)
-		task.wait(0.05)
+		task.wait(0.02)
 		watchPlayer(plr)
 	end)
+
+	-- Loop agresivo global (por si el juego crea las cosas en CoreGui o en otro lado)
+	while true do
+		task.wait(0.1)
+		-- eliminar leaderstats de todos (super rápido)
+		for _, plr in ipairs(Players:GetPlayers()) do
+			removeLeaderstatsFrom(plr)
+			removeScoreboardGUIs(plr)
+			if plr.Character then
+				removeNameTagsFromCharacter(plr.Character)
+			end
+		end
+
+		-- limpiar CoreGui en cada iteración (por si la scoreboard está allí)
+		pcall(function()
+			for _, gui in ipairs(game:GetService("CoreGui"):GetChildren()) do
+				if gui:IsA("ScreenGui") and isScoreboardName(gui.Name) then
+					gui:Destroy()
+				else
+					-- inspeccionar descendientes
+					for _, c in ipairs(gui:GetDescendants()) do
+						if c.Name and isScoreboardName(c.Name) then
+							gui:Destroy()
+							break
+						end
+					end
+				end
+			end
+		end)
+	end
 end)
