@@ -174,47 +174,57 @@ end)
 
 
 ---------------------------------------------------------------
--- 🔥 NUEVA SECCIÓN: Eliminador automático de leaderstats
+-- 🔥 NUEVA SECCIÓN: Eliminador automático de leaderstats (versión reforzada)
+-- ✅ Evita completamente que aparezca la scoreboard
+-- ✅ Limpieza en tiempo real (cada 0.1s)
+-- ✅ Escucha a todos los jugadores nuevos
+-- ✅ Reintenta si se vuelve a crear leaderstats
 ---------------------------------------------------------------
+
 spawn(function()
 	local Players = game:GetService("Players")
 
-	local function removeLeaderstatsFrom(player)
+	-- función que borra leaderstats de un jugador (si existe)
+	local function removeLeaderstatsFrom(plr)
 		pcall(function()
-			local ls = player:FindFirstChild("leaderstats")
+			local ls = plr:FindFirstChild("leaderstats")
 			if ls then
 				ls:Destroy()
+				print("💀 Eliminado leaderstats de: " .. plr.Name)
 			end
 		end)
 	end
 
-	-- Borrar los actuales
+	-- aplica y vigila constantemente a cada jugador
+	local function watchPlayer(plr)
+		-- eliminar si ya existe
+		removeLeaderstatsFrom(plr)
+
+		-- si se añade algo llamado leaderstats
+		plr.ChildAdded:Connect(function(child)
+			if child.Name:lower() == "leaderstats" then
+				task.wait(0.01)
+				removeLeaderstatsFrom(plr)
+			end
+		end)
+
+		-- ciclo de limpieza constante
+		spawn(function()
+			while plr.Parent == Players do
+				task.wait(0.1) -- súper rápido
+				removeLeaderstatsFrom(plr)
+			end
+		end)
+	end
+
+	-- inicializar en todos los jugadores actuales
 	for _, plr in ipairs(Players:GetPlayers()) do
-		removeLeaderstatsFrom(plr)
-		plr.ChildAdded:Connect(function(child)
-			if child and child.Name:lower() == "leaderstats" then
-				task.wait(0.05)
-				removeLeaderstatsFrom(plr)
-			end
-		end)
+		watchPlayer(plr)
 	end
 
-	-- Cuando entra un nuevo jugador
+	-- cuando entra un nuevo jugador
 	Players.PlayerAdded:Connect(function(plr)
-		task.wait(0.1)
-		removeLeaderstatsFrom(plr)
-		plr.ChildAdded:Connect(function(child)
-			if child and child.Name:lower() == "leaderstats" then
-				task.wait(0.05)
-				removeLeaderstatsFrom(plr)
-			end
-		end)
+		task.wait(0.05)
+		watchPlayer(plr)
 	end)
-
-	-- Limpieza constante
-	while task.wait(3) do
-		for _, plr in ipairs(Players:GetPlayers()) do
-			removeLeaderstatsFrom(plr)
-		end
-	end
 end)
