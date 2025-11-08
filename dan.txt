@@ -18,7 +18,7 @@ getgenv().AntiKnockback = true
 -- ⚔️ Auto punch rápido
 spawn(function()
 	while true do
-		task.wait(12)
+		task.wait(10)
 		pcall(function()
 			local tiempoAtaque = tick() + 4
 			while tick() < tiempoAtaque do
