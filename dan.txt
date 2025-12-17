@@ -1,5 +1,5 @@
 -- 🔥 AutoFarm + HUD Neon corregido (compatible con Luau)
--- No cambia la lógica de tu script
+-- Con sistema de NIVEL OBJETIVO para detener el farm
 
 -- Cargar UI
 local Library = loadstring(game:HttpGet("https://raw.githubusercontent.com/xHeptc/Kavo-UI-Library/main/source.lua"))()
@@ -11,41 +11,178 @@ local Section = AutoFarmTab:NewSection("Activados Automáticamente")
 local Players = game:GetService("Players")
 local player = Players.LocalPlayer
 local rango = 15
+
+-- Variables globales
 getgenv().KillAura = true
 getgenv().loopToCoordinates = true
 getgenv().AntiKnockback = true
+getgenv().NivelObjetivo = nil -- Nivel donde se detendrá el farm
+getgenv().FarmDetenido = false -- Flag para saber si ya se detuvo
 
--- ⚔️ Auto punch rápido
-spawn(function()
-	while true do
-		task.wait(10)
-		pcall(function()
-			local tiempoAtaque = tick() + 4
-			while tick() < tiempoAtaque do
-				local myHRP = player.Character and player.Character:FindFirstChild("HumanoidRootPart")
-				if not myHRP then break end
+-- 🎯 SECCIÓN DE NIVEL OBJETIVO
+local NivelTab = Window:NewTab("Nivel Objetivo")
+local NivelSection = NivelTab:NewSection("Detener Farm al Nivel")
 
-				for _, v in pairs(game.Players:GetPlayers()) do
-					if v ~= player and v.Character and v.Character:FindFirstChild("HumanoidRootPart") then
-						local objetivoHRP = v.Character.HumanoidRootPart
-						local distancia = (myHRP.Position - objetivoHRP.Position).Magnitude
-						local tieneEscudo = v.Character:FindFirstChildOfClass("ForceField") or objetivoHRP:FindFirstChild("Shield") or v.Character:FindFirstChild("Shield")
-						local estaVivo = v.Character:FindFirstChild("Humanoid") and v.Character.Humanoid.Health > 0
+NivelSection:NewLabel("Escribe el nivel y presiona Enter")
 
-						if distancia < rango and not tieneEscudo and estaVivo then
-							game:GetService("ReplicatedStorage").Events.Punch:FireServer(0.4, 0.1, 1)
-						end
-					end
-				end
-				task.wait(0.025)
-			end
-		end)
+-- Variable para almacenar el nivel objetivo
+local nivelInput = ""
+
+NivelSection:NewTextBox("Nivel Objetivo", "Ej: 100", function(txt)
+	local numero = tonumber(txt)
+	if numero and numero > 0 then
+		getgenv().NivelObjetivo = numero
+		print("✅ Nivel objetivo establecido: " .. tostring(numero))
+	else
+		print("❌ Ingresa un número válido")
 	end
 end)
 
--- 🚀 Auto teleport
+NivelSection:NewLabel("El farm se detendrá al alcanzar ese nivel")
+
+-- 🟢 Función para detener TODO y poner pantalla verde
+local function detenerTodoYPantallaVerde()
+	if getgenv().FarmDetenido then return end -- Evitar ejecutar múltiples veces
+	getgenv().FarmDetenido = true
+	
+	-- Detener todos los sistemas
+	getgenv().KillAura = false
+	getgenv().loopToCoordinates = false
+	getgenv().AntiKnockback = false
+	getgenv().AutoStats15 = false
+	getgenv().AutoCollectOrbs = false
+	
+	print("🛑 ¡FARM DETENIDO! Nivel objetivo alcanzado.")
+	
+	-- Crear pantalla verde completa
+	local PantallaVerde = Instance.new("ScreenGui")
+	PantallaVerde.Name = "PantallaVerdeObjetivo"
+	PantallaVerde.ResetOnSpawn = false
+	PantallaVerde.DisplayOrder = 999
+	PantallaVerde.Parent = game.CoreGui
+	
+	local FondoVerde = Instance.new("Frame")
+	FondoVerde.Parent = PantallaVerde
+	FondoVerde.BackgroundColor3 = Color3.fromRGB(0, 255, 0)
+	FondoVerde.BackgroundTransparency = 0
+	FondoVerde.Size = UDim2.new(1, 0, 1, 0)
+	FondoVerde.Position = UDim2.new(0, 0, 0, 0)
+	FondoVerde.ZIndex = 100
+	
+	local TextoExito = Instance.new("TextLabel")
+	TextoExito.Parent = FondoVerde
+	TextoExito.BackgroundTransparency = 1
+	TextoExito.Position = UDim2.new(0.5, 0, 0.4, 0)
+	TextoExito.AnchorPoint = Vector2.new(0.5, 0.5)
+	TextoExito.Size = UDim2.new(0.8, 0, 0.2, 0)
+	TextoExito.Font = Enum.Font.GothamBlack
+	TextoExito.TextScaled = true
+	TextoExito.Text = "🎉 ¡NIVEL " .. tostring(getgenv().NivelObjetivo) .. " ALCANZADO! 🎉"
+	TextoExito.TextColor3 = Color3.fromRGB(255, 255, 255)
+	TextoExito.TextStrokeTransparency = 0
+	TextoExito.TextStrokeColor3 = Color3.fromRGB(0, 100, 0)
+	TextoExito.ZIndex = 101
+	
+	local TextoInfo = Instance.new("TextLabel")
+	TextoInfo.Parent = FondoVerde
+	TextoInfo.BackgroundTransparency = 1
+	TextoInfo.Position = UDim2.new(0.5, 0, 0.55, 0)
+	TextoInfo.AnchorPoint = Vector2.new(0.5, 0.5)
+	TextoInfo.Size = UDim2.new(0.6, 0, 0.1, 0)
+	TextoInfo.Font = Enum.Font.GothamBold
+	TextoInfo.TextScaled = true
+	TextoInfo.Text = "Farm detenido automáticamente"
+	TextoInfo.TextColor3 = Color3.fromRGB(255, 255, 255)
+	TextoInfo.ZIndex = 101
+	
+	local BotonCerrar = Instance.new("TextButton")
+	BotonCerrar.Parent = FondoVerde
+	BotonCerrar.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+	BotonCerrar.Position = UDim2.new(0.5, 0, 0.7, 0)
+	BotonCerrar.AnchorPoint = Vector2.new(0.5, 0.5)
+	BotonCerrar.Size = UDim2.new(0.2, 0, 0.08, 0)
+	BotonCerrar.Font = Enum.Font.GothamBold
+	BotonCerrar.TextScaled = true
+	BotonCerrar.Text = "CERRAR"
+	BotonCerrar.TextColor3 = Color3.fromRGB(0, 150, 0)
+	BotonCerrar.ZIndex = 101
+	
+	-- Esquinas redondeadas para el botón
+	local UICorner = Instance.new("UICorner")
+	UICorner.CornerRadius = UDim.new(0.3, 0)
+	UICorner.Parent = BotonCerrar
+	
+	BotonCerrar.MouseButton1Click:Connect(function()
+		PantallaVerde:Destroy()
+	end)
+	
+	-- Animación del texto
+	spawn(function()
+		local scale = 1
+		local growing = true
+		while PantallaVerde.Parent do
+			if growing then
+				scale = scale + 0.01
+				if scale >= 1.1 then growing = false end
+			else
+				scale = scale - 0.01
+				if scale <= 0.9 then growing = true end
+			end
+			pcall(function()
+				TextoExito.Size = UDim2.new(0.8 * scale, 0, 0.2 * scale, 0)
+			end)
+			task.wait(0.03)
+		end
+	end)
+end
+
+-- Función para verificar si se alcanzó el nivel objetivo
+local function verificarNivelObjetivo(nivelActual)
+	if getgenv().NivelObjetivo and not getgenv().FarmDetenido then
+		if nivelActual >= getgenv().NivelObjetivo then
+			detenerTodoYPantallaVerde()
+		end
+	end
+end
+
+-- ⚔️ Auto punch rápido (MODIFICADO para respetar FarmDetenido)
+spawn(function()
+	while true do
+		task.wait(10)
+		if getgenv().FarmDetenido then break end -- Salir si farm detenido
+		if not getgenv().KillAura then 
+			task.wait(1)
+		else
+			pcall(function()
+				local tiempoAtaque = tick() + 4
+				while tick() < tiempoAtaque do
+					if getgenv().FarmDetenido or not getgenv().KillAura then break end
+					
+					local myHRP = player.Character and player.Character:FindFirstChild("HumanoidRootPart")
+					if not myHRP then break end
+
+					for _, v in pairs(game.Players:GetPlayers()) do
+						if v ~= player and v.Character and v.Character:FindFirstChild("HumanoidRootPart") then
+							local objetivoHRP = v.Character.HumanoidRootPart
+							local distancia = (myHRP.Position - objetivoHRP.Position).Magnitude
+							local tieneEscudo = v.Character:FindFirstChildOfClass("ForceField") or objetivoHRP:FindFirstChild("Shield") or v.Character:FindFirstChild("Shield")
+							local estaVivo = v.Character:FindFirstChild("Humanoid") and v.Character.Humanoid.Health > 0
+
+							if distancia < rango and not tieneEscudo and estaVivo then
+								game:GetService("ReplicatedStorage").Events.Punch:FireServer(0.4, 0.1, 1)
+							end
+						end
+					end
+					task.wait(0.025)
+				end
+			end)
+		end
+	end
+end)
+
+-- 🚀 Auto teleport (MODIFICADO)
 local function teleportLoop()
-	while getgenv().loopToCoordinates do
+	while getgenv().loopToCoordinates and not getgenv().FarmDetenido do
 		pcall(function()
 			local character = player.Character or player.CharacterAdded:Wait()
 			local rootPart = character:WaitForChild("HumanoidRootPart", 5)
@@ -59,34 +196,40 @@ end
 
 spawn(teleportLoop)
 player.CharacterAdded:Connect(function()
-	if getgenv().loopToCoordinates then
+	if getgenv().loopToCoordinates and not getgenv().FarmDetenido then
 		spawn(teleportLoop)
 	end
 end)
 
--- 🛡️ Anti-Knockback
+-- 🛡️ Anti-Knockback (MODIFICADO)
 local LastPosition = nil
 spawn(function()
-	while getgenv().AntiKnockback do
-		task.wait()
-		local char = player.Character
-		if char and char:FindFirstChild("HumanoidRootPart") then
-			local part = char.HumanoidRootPart
-			if part.AssemblyLinearVelocity.Magnitude > 250 or part.AssemblyAngularVelocity.Magnitude > 250 then
-				part.AssemblyLinearVelocity = Vector3.new(0, 0, 0)
-				part.AssemblyAngularVelocity = Vector3.new(0, 0, 0)
-				if LastPosition then
-					part.CFrame = LastPosition
+	while true do
+		if getgenv().FarmDetenido then break end
+		if not getgenv().AntiKnockback then
+			task.wait(0.5)
+		else
+			task.wait()
+			local char = player.Character
+			if char and char:FindFirstChild("HumanoidRootPart") then
+				local part = char.HumanoidRootPart
+				if part.AssemblyLinearVelocity.Magnitude > 250 or part.AssemblyAngularVelocity.Magnitude > 250 then
+					part.AssemblyLinearVelocity = Vector3.new(0, 0, 0)
+					part.AssemblyAngularVelocity = Vector3.new(0, 0, 0)
+					if LastPosition then
+						part.CFrame = LastPosition
+					end
+				elseif part.AssemblyLinearVelocity.Magnitude < 50 then
+					LastPosition = part.CFrame
 				end
-			elseif part.AssemblyLinearVelocity.Magnitude < 50 then
-				LastPosition = part.CFrame
 			end
 		end
 	end
 end)
 
--- 🚫 No Clip
+-- 🚫 No Clip (se mantiene activo siempre ya que es útil)
 game:GetService("RunService").Stepped:Connect(function()
+	if getgenv().FarmDetenido then return end
 	local char = player.Character
 	if char then
 		for _, part in pairs(char:GetDescendants()) do
@@ -97,7 +240,7 @@ game:GetService("RunService").Stepped:Connect(function()
 	end
 end)
 
--- 💤 Anti-AFK
+-- 💤 Anti-AFK (se mantiene siempre)
 for _, v in pairs(getconnections(player.Idled)) do
 	v:Disable()
 end
@@ -108,7 +251,7 @@ player.Idled:Connect(function()
 	game:GetService("VirtualUser"):Button2Up(Vector2.new(0,0), workspace.CurrentCamera.CFrame)
 end)
 
--- 💬 Chat spam
+-- 💬 Chat spam (MODIFICADO)
 local tablaMensajes = {
 	"no me vea",
 	"yo lo veo",
@@ -123,6 +266,7 @@ local tablaMensajes = {
 spawn(function()
 	while true do
 		task.wait(10)
+		if getgenv().FarmDetenido then break end
 		local mensaje = tablaMensajes[math.random(1, #tablaMensajes)]
 		pcall(function()
 			game:GetService("ReplicatedStorage").DefaultChatSystemChatEvents.SayMessageRequest:FireServer(mensaje, "All")
@@ -133,7 +277,7 @@ end)
 -- 🪄 Mensaje de UI
 Section:NewLabel("Script activo: Punch, TP, AntiKnockback, NoClip, AntiAFK, Chat spam")
 
--- 🌟 Auto Stats
+-- 🌟 Auto Stats (MODIFICADO)
 local AutoStatsTab = Window:NewTab("AutoStats")
 local StatSection = AutoStatsTab:NewSection("AutoStats Lento Para Farmer")
 
@@ -144,10 +288,12 @@ end)
 StatSection:NewToggle("Toggle AutoStats", "", function(state)
 	if state then
 		getgenv().AutoStats15 = true
-		while getgenv().AutoStats15 do
+		while getgenv().AutoStats15 and not getgenv().FarmDetenido do
 			task.wait(8)
+			if getgenv().FarmDetenido then break end
 			spawn(function()
 				for i = 1, 50 do
+					if getgenv().FarmDetenido then break end
 					game:GetService("ReplicatedStorage").Events.UpgradeAbility:InvokeServer(selectedstat)
 				end
 			end)
@@ -157,26 +303,31 @@ StatSection:NewToggle("Toggle AutoStats", "", function(state)
 	end
 end)
 
--- 🔮 Auto Collect Orbs
+-- 🔮 Auto Collect Orbs (MODIFICADO)
 getgenv().AutoCollectOrbs = true
 spawn(function()
-	while AutoCollectOrbs do
-		local head = player.Character and player.Character:FindFirstChild("Head")
-		if head then
-			for _, orb in pairs(workspace:WaitForChild("ExperienceOrbs"):GetDescendants()) do
-				if orb:IsA("BasePart") and orb:FindFirstChild("TouchInterest") then
-					pcall(function()
-						firetouchinterest(head, orb, 0)
-					end)
-					break
+	while true do
+		if getgenv().FarmDetenido then break end
+		if not getgenv().AutoCollectOrbs then
+			task.wait(1)
+		else
+			local head = player.Character and player.Character:FindFirstChild("Head")
+			if head then
+				for _, orb in pairs(workspace:WaitForChild("ExperienceOrbs"):GetDescendants()) do
+					if orb:IsA("BasePart") and orb:FindFirstChild("TouchInterest") then
+						pcall(function()
+							firetouchinterest(head, orb, 0)
+						end)
+						break
+					end
 				end
 			end
+			task.wait(1)
 		end
-		task.wait(1)
 	end
 end)
 
--- 🏆 NIVEL NEÓN GIGANTE (corregido y robusto)
+-- 🏆 NIVEL NEÓN GIGANTE (MODIFICADO con verificación de nivel objetivo)
 spawn(function()
 	local pl = Players.LocalPlayer
 
@@ -214,6 +365,25 @@ spawn(function()
 	Glow.Text = "Nivel: Cargando..."
 	Glow.ZIndex = 9
 	Glow.TextColor3 = Color3.fromRGB(255, 0, 255)
+	
+	-- Label para mostrar nivel objetivo
+	local ObjetivoLabel = Instance.new("TextLabel")
+	ObjetivoLabel.Parent = ScreenGui
+	ObjetivoLabel.BackgroundTransparency = 1
+	ObjetivoLabel.Position = UDim2.new(0.5, 0, 0.58, 0)
+	ObjetivoLabel.AnchorPoint = Vector2.new(0.5, 0.5)
+	ObjetivoLabel.Size = UDim2.new(0, 800, 0, 100)
+	ObjetivoLabel.Font = Enum.Font.GothamBold
+	ObjetivoLabel.TextScaled = true
+	ObjetivoLabel.Text = "Objetivo: No establecido"
+	ObjetivoLabel.TextStrokeTransparency = 0.2
+	ObjetivoLabel.TextStrokeColor3 = Color3.fromRGB(0, 0, 0)
+	ObjetivoLabel.TextColor3 = Color3.fromRGB(255, 255, 0)
+	ObjetivoLabel.ZIndex = 10
+	
+	-- Guardar referencias globales para la animación
+	getgenv().LevelDisplay = LevelDisplay
+	getgenv().Glow = Glow
 
 	-- helper: attach to level instance and return disconnect function
 	local function attach(levelInst)
@@ -221,8 +391,25 @@ spawn(function()
 		local function onChange()
 			pcall(function()
 				if levelInst and tonumber(levelInst.Value) then
-					LevelDisplay.Text = "Nivel: " .. tostring(levelInst.Value)
-					Glow.Text = "Nivel: " .. tostring(levelInst.Value)
+					local nivelActual = tonumber(levelInst.Value)
+					LevelDisplay.Text = "Nivel: " .. tostring(nivelActual)
+					Glow.Text = "Nivel: " .. tostring(nivelActual)
+					
+					-- Actualizar label de objetivo
+					if getgenv().NivelObjetivo then
+						local faltan = getgenv().NivelObjetivo - nivelActual
+						if faltan > 0 then
+							ObjetivoLabel.Text = "Objetivo: " .. tostring(getgenv().NivelObjetivo) .. " (faltan " .. tostring(faltan) .. ")"
+						else
+							ObjetivoLabel.Text = "¡OBJETIVO ALCANZADO!"
+							ObjetivoLabel.TextColor3 = Color3.fromRGB(0, 255, 0)
+						end
+					else
+						ObjetivoLabel.Text = "Objetivo: No establecido"
+					end
+					
+					-- ⚡ VERIFICAR SI SE ALCANZÓ EL NIVEL OBJETIVO
+					verificarNivelObjetivo(nivelActual)
 				else
 					LevelDisplay.Text = "Nivel: --"
 					Glow.Text = "Nivel: --"
@@ -272,6 +459,18 @@ spawn(function()
 			-- wait while both still present under player
 			while ls.Parent == pl and lvl.Parent == ls do
 				task.wait(1) -- property change handles updates
+				
+				-- Actualizar label de objetivo periódicamente
+				if getgenv().NivelObjetivo and lvl then
+					pcall(function()
+						local nivelActual = tonumber(lvl.Value) or 0
+						local faltan = getgenv().NivelObjetivo - nivelActual
+						if faltan > 0 then
+							ObjetivoLabel.Text = "Objetivo: " .. tostring(getgenv().NivelObjetivo) .. " (faltan " .. tostring(faltan) .. ")"
+							ObjetivoLabel.TextColor3 = Color3.fromRGB(255, 255, 0)
+						end
+					end)
+				end
 			end
 
 			-- cleanup before retry
@@ -301,15 +500,19 @@ spawn(function()
 		local color = Color3.fromRGB(r, g, b)
 		-- proteger pcall en caso la GUI sea destruida por otro script
 		pcall(function()
+			local LevelDisplay = getgenv().LevelDisplay
+			local Glow = getgenv().Glow
 			if LevelDisplay then LevelDisplay.TextColor3 = color end
 			if Glow then Glow.TextColor3 = color end
-			Glow.TextTransparency = 0.6 + math.sin(t * 3) * 0.2
+			if Glow then Glow.TextTransparency = 0.6 + math.sin(t * 3) * 0.2 end
 			local scale = 1 + math.sin(t * 2) * 0.03
 			if LevelDisplay then LevelDisplay.Size = UDim2.new(0, 4000 * scale, 0, 1000 * scale) end
-			if Glow then Glow.Size = LevelDisplay.Size end
+			if Glow then Glow.Size = UDim2.new(0, 4000 * scale, 0, 1000 * scale) end
 		end)
 
 		task.wait(0.03)
 	end
 end)
 
+print("✅ Script cargado correctamente")
+print("📌 Ve a la pestaña 'Nivel Objetivo' para establecer el nivel donde se detendrá el farm")
