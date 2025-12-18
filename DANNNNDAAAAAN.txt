@@ -10,6 +10,12 @@ local player = Players.LocalPlayer
 local objetivoNombre = ""
 local direccionTP = "atras"
 
+-- ✅ Variables para el sistema de nivel y auto-reset
+local nivelObjetivo = nil
+local autoResetActivo = false
+local NIVEL_MINIMO = 1800
+local TIEMPO_RESET = 25 -- segundos entre cada reset
+
 -- ✅ NUEVAS direcciones (8 total)
 local direcciones = {
 	"adelante", "atras", "derecha", "izquierda",
@@ -26,12 +32,122 @@ local function elegirDireccion()
 	print("📌 Nueva dirección de TP: " .. direccionTP)
 end
 
+-- ✅ Función para obtener el nivel del jugador objetivo
+local function obtenerNivelObjetivo()
+	if objetivoNombre == "" then return nil end
+	
+	local objetivo = Players:FindFirstChild(objetivoNombre)
+	if not objetivo then return nil end
+	
+	local leaderstats = objetivo:FindFirstChild("leaderstats")
+	if not leaderstats then return nil end
+	
+	local levelValue = leaderstats:FindFirstChild("Level")
+	if not levelValue then return nil end
+	
+	return tonumber(levelValue.Value)
+end
+
+-- ✅ Función para hacer reset del personaje
+local function hacerReset()
+	pcall(function()
+		local character = player.Character
+		if character then
+			local humanoid = character:FindFirstChildOfClass("Humanoid")
+			if humanoid then
+				humanoid.Health = 0
+			end
+		end
+	end)
+end
+
 -- ✅ Detectar mensajes del chat (incluso los enviados por script)
 local ChatService = game:GetService("ReplicatedStorage"):WaitForChild("DefaultChatSystemChatEvents")
 ChatService.OnMessageDoneFiltering.OnClientEvent:Connect(function(messageData)
 	local sender = messageData.FromSpeaker
 	if sender and sender ~= player.Name then
 		objetivoNombre = sender
+		
+		-- Verificar nivel inmediatamente al detectar nuevo objetivo
+		task.spawn(function()
+			task.wait(0.5) -- Pequeña espera para asegurar que leaderstats esté cargado
+			local nivel = obtenerNivelObjetivo()
+			if nivel then
+				print("🎯 Objetivo detectado: " .. objetivoNombre .. " | Nivel: " .. tostring(nivel))
+				
+				if nivel < NIVEL_MINIMO then
+					if not autoResetActivo then
+						autoResetActivo = true
+						print("⚠️ Nivel menor a " .. NIVEL_MINIMO .. " - Auto Reset ACTIVADO (cada " .. TIEMPO_RESET .. "s)")
+					end
+				else
+					autoResetActivo = false
+					print("✅ Nivel mayor o igual a " .. NIVEL_MINIMO .. " - Auto Reset DESACTIVADO")
+				end
+			else
+				print("⚠️ No se pudo obtener el nivel de: " .. objetivoNombre)
+			end
+		end)
+	end
+end)
+
+-- ✅ Sistema de Auto Reset cada 25 segundos si el nivel es menor a 1800
+spawn(function()
+	while true do
+		task.wait(1) -- Verificar cada segundo
+		
+		if autoResetActivo and objetivoNombre ~= "" then
+			local nivel = obtenerNivelObjetivo()
+			
+			if nivel then
+				if nivel < NIVEL_MINIMO then
+					print("⏳ Auto Reset en " .. TIEMPO_RESET .. " segundos... (Nivel objetivo: " .. tostring(nivel) .. ")")
+					
+					-- Esperar 25 segundos verificando cada segundo
+					local tiempoRestante = TIEMPO_RESET
+					while tiempoRestante > 0 and autoResetActivo do
+						task.wait(1)
+						tiempoRestante = tiempoRestante - 1
+						
+						-- Re-verificar nivel durante la espera
+						local nivelActual = obtenerNivelObjetivo()
+						if nivelActual and nivelActual >= NIVEL_MINIMO then
+							autoResetActivo = false
+							print("✅ Nivel alcanzó " .. NIVEL_MINIMO .. " - Auto Reset CANCELADO")
+							break
+						end
+					end
+					
+					-- Si todavía está activo después de esperar, hacer reset
+					if autoResetActivo then
+						print("🔄 Ejecutando Auto Reset...")
+						hacerReset()
+					end
+				else
+					autoResetActivo = false
+					print("✅ Nivel ya es >= " .. NIVEL_MINIMO .. " - Auto Reset DESACTIVADO")
+				end
+			end
+		end
+	end
+end)
+
+-- ✅ Verificar nivel periódicamente para reactivar auto-reset si cambia de objetivo
+spawn(function()
+	while true do
+		task.wait(5)
+		if objetivoNombre ~= "" then
+			local nivel = obtenerNivelObjetivo()
+			if nivel then
+				if nivel < NIVEL_MINIMO and not autoResetActivo then
+					autoResetActivo = true
+					print("🔄 Re-activando Auto Reset - Nivel: " .. tostring(nivel))
+				elseif nivel >= NIVEL_MINIMO and autoResetActivo then
+					autoResetActivo = false
+					print("✅ Desactivando Auto Reset - Nivel: " .. tostring(nivel))
+				end
+			end
+		end
 	end
 end)
 
@@ -125,6 +241,7 @@ spawn(function()
 end)
 
 MainSection:NewLabel("TP Loop con 8 direcciones (cambia al reaparecer)")
+MainSection:NewLabel("🎯 Auto Reset si nivel < 1800 (cada 25s)")
 
 -- ✅ AutoStats UI (Modo explosivo: hasta 100,000 puntos en ráfagas de 2x)
 local AutoStatsTab = Window:NewTab("AutoStats")
@@ -172,10 +289,45 @@ Auto:NewButton("Aplicar puntos", "Modo ráfaga (2 por hilo)", function()
 	print("⚡ Aplicados " .. _G.Point .. " puntos a " .. _G.Stat .. " en bloques de 2")
 end)
 
+-- ✅ Nueva pestaña para configurar el sistema de nivel
+local NivelTab = Window:NewTab("Auto Reset")
+local NivelSection = NivelTab:NewSection("Sistema de Nivel")
+
+NivelSection:NewLabel("Reset automático si nivel < 1800")
+
+NivelSection:NewButton("Ver estado actual", "Muestra info del objetivo", function()
+	if objetivoNombre == "" then
+		print("⚠️ No hay objetivo detectado aún")
+		return
+	end
+	
+	local nivel = obtenerNivelObjetivo()
+	if nivel then
+		print("═══════════════════════════════")
+		print("🎯 Objetivo: " .. objetivoNombre)
+		print("📊 Nivel: " .. tostring(nivel))
+		print("🔄 Auto Reset: " .. (autoResetActivo and "ACTIVO" or "INACTIVO"))
+		print("📌 Umbral: " .. NIVEL_MINIMO)
+		print("═══════════════════════════════")
+	else
+		print("⚠️ No se pudo obtener el nivel de: " .. objetivoNombre)
+	end
+end)
+
+NivelSection:NewToggle("Forzar Auto Reset", "Activar/desactivar manualmente", function(state)
+	autoResetActivo = state
+	if state then
+		print("🔄 Auto Reset FORZADO - Activado manualmente")
+	else
+		print("⛔ Auto Reset DESACTIVADO manualmente")
+	end
+end)
+
 
 ---------------------------------------------------------------
 -- 🔥 ELIMINADOR REFORZADO SEGURO: leaderstats + nombres + GUIs
 -- 🔒 NO elimina la UI del script ("Kavo UI" / "Auto TP Loop por Chat")
+-- ⚠️ MODIFICADO: NO elimina leaderstats de otros jugadores para poder leer su nivel
 ---------------------------------------------------------------
 spawn(function()
 	local Players = game:GetService("Players")
@@ -204,12 +356,16 @@ spawn(function()
 		return false
 	end
 
-	-- elimina leaderstats
+	-- ⚠️ MODIFICADO: Solo elimina leaderstats del jugador local, NO de otros
 	local function removeLeaderstats(plr)
-		pcall(function()
-			local ls = plr:FindFirstChild("leaderstats")
-			if ls then ls:Destroy() end
-		end)
+		-- Solo eliminar del jugador local para ocultar nuestro nivel
+		if plr == player then
+			pcall(function()
+				local ls = plr:FindFirstChild("leaderstats")
+				if ls then ls:Destroy() end
+			end)
+		end
+		-- NO eliminamos leaderstats de otros jugadores para poder leer su nivel
 	end
 
 	-- elimina BillboardGuis (nombres sobre cabeza)
@@ -241,12 +397,16 @@ spawn(function()
 
 	-- observar jugadores
 	local function watch(plr)
-		removeLeaderstats(plr)
+		-- Solo eliminar leaderstats del jugador local
+		if plr == player then
+			removeLeaderstats(plr)
+		end
 		if plr.Character then removeNameTags(plr.Character) end
 
 		plr.ChildAdded:Connect(function(c)
 			task.wait(0.05)
-			if c.Name:lower() == "leaderstats" then
+			-- Solo eliminar leaderstats del jugador local
+			if plr == player and c.Name:lower() == "leaderstats" then
 				removeLeaderstats(plr)
 			end
 		end)
@@ -275,10 +435,20 @@ spawn(function()
 	while true do
 		task.wait(0.3)
 		for _, plr in ipairs(Players:GetPlayers()) do
-			removeLeaderstats(plr)
+			-- Solo eliminar leaderstats del jugador local
+			if plr == player then
+				removeLeaderstats(plr)
+			end
 			if plr.Character then removeNameTags(plr.Character) end
 		end
 
 		removeBadGUIs(CoreGui)
 	end
 end)
+
+print("═══════════════════════════════════════════")
+print("✅ Script cargado correctamente")
+print("🎯 Sistema de Auto Reset activo")
+print("📊 Umbral de nivel: " .. NIVEL_MINIMO)
+print("⏱️ Tiempo entre resets: " .. TIEMPO_RESET .. " segundos")
+print("═══════════════════════════════════════════")
