@@ -1,4 +1,3 @@
-
 local Library = loadstring(game:HttpGet("https://raw.githubusercontent.com/xHeptc/Kavo-UI-Library/main/source.lua"))()
 local Window = Library.CreateLib("Auto Stats Hub - AoH", "Ocean")
 
@@ -7,17 +6,20 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local VirtualUser = game:GetService("VirtualUser")
 local player = Players.LocalPlayer
 
--- Globales
+-- ═══════════════════════════════════════════════════════════════════════════
+-- 📊 VARIABLES GLOBALES
+-- ═══════════════════════════════════════════════════════════════════════════
+
 getgenv().SelectedStat = "strength"
 getgenv().PointsToApply = 100
 getgenv().AutoStatsRunning = false
 getgenv().AntiAFKEnabled = false
 
--- Configuración de velocidades
+-- Configuración de velocidades (x2 velocidad)
 local Velocidades = {
-	["Normal"] = {bloques = 1, espera = 0.5, nombre = "🐢 Normal (1 por 0.5s)"},
-	["Rapida"] = {bloques = 5, espera = 0.1, nombre = "🐇 Rápida (5 por 0.1s)"},
-	["UltraRapida"] = {bloques = 10, espera = 0.05, nombre = "⚡ Ultra Rápida (10 por 0.05s)"}
+	["Normal"] = {bloques = 2, espera = 0.25, nombre = "🐢 Normal (2 por 0.25s)"},
+	["Rapida"] = {bloques = 10, espera = 0.05, nombre = "🐇 Rápida (10 por 0.05s)"},
+	["UltraRapida"] = {bloques = 20, espera = 0.025, nombre = "⚡ Ultra Rápida (20 por 0.025s)"}
 }
 
 getgenv().VelocidadSeleccionada = "Normal"
@@ -310,9 +312,9 @@ AFKSection:NewLabel("Anti-AFK evita el kick por inactividad")
 -- Sección de información
 local InfoSection = OptionsTab:NewSection("Información de Velocidades")
 
-InfoSection:NewLabel("🐢 Normal: 1 punto cada 0.5s")
-InfoSection:NewLabel("🐇 Rápida: 5 puntos cada 0.1s")
-InfoSection:NewLabel("⚡ Ultra: 10 puntos cada 0.05s")
+InfoSection:NewLabel("🐢 Normal: 2 puntos cada 0.25s")
+InfoSection:NewLabel("🐇 Rápida: 10 puntos cada 0.05s")
+InfoSection:NewLabel("⚡ Ultra: 20 puntos cada 0.025s")
 InfoSection:NewLabel("")
 InfoSection:NewLabel("⚠️ Ultra puede causar lag")
 
