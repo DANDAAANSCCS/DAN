@@ -15,11 +15,11 @@ getgenv().PointsToApply = 100
 getgenv().AutoStatsRunning = false
 getgenv().AntiAFKEnabled = false
 
--- Configuración de velocidades (x2 velocidad)
+-- Configuración de velocidades (aplicación forzada/simultánea)
 local Velocidades = {
-	["Normal"] = {bloques = 2, espera = 0.25, nombre = "🐢 Normal (2 por 0.25s)"},
-	["Rapida"] = {bloques = 10, espera = 0.05, nombre = "🐇 Rápida (10 por 0.05s)"},
-	["UltraRapida"] = {bloques = 20, espera = 0.025, nombre = "⚡ Ultra Rápida (20 por 0.025s)"}
+	["Normal"] = {bloques = 1, espera = 0.1, nombre = "🐢 Normal (1 en 1)"},
+	["Rapida"] = {bloques = 4, espera = 0.05, nombre = "🐇 Rápida (4 en 4)"},
+	["UltraRapida"] = {bloques = 15, espera = 0.03, nombre = "⚡ Ultra Rápida (15 en 15)"}
 }
 
 getgenv().VelocidadSeleccionada = "Normal"
@@ -55,7 +55,7 @@ local TodosLosStats = {
 -- 🔧 FUNCIONES
 -- ═══════════════════════════════════════════════════════════════════════════
 
--- Función para aplicar stats
+-- Función para aplicar stats (FORZADO - aplica simultáneamente)
 local function aplicarStats(stat, cantidad, velocidad)
 	local config = Velocidades[velocidad]
 	local aplicados = 0
@@ -70,12 +70,16 @@ local function aplicarStats(stat, cantidad, velocidad)
 	while aplicados < cantidad and getgenv().AutoStatsRunning do
 		local puntosEnBloque = math.min(config.bloques, cantidad - aplicados)
 		
+		-- FORZADO: Aplicar todos los del bloque SIMULTÁNEAMENTE con spawn
 		for i = 1, puntosEnBloque do
 			if not getgenv().AutoStatsRunning then break end
 			
-			pcall(function()
-				ReplicatedStorage.Events.UpgradeAbility:InvokeServer(stat)
+			spawn(function()
+				pcall(function()
+					ReplicatedStorage.Events.UpgradeAbility:InvokeServer(stat)
+				end)
 			end)
+			
 			aplicados = aplicados + 1
 		end
 		
@@ -312,11 +316,11 @@ AFKSection:NewLabel("Anti-AFK evita el kick por inactividad")
 -- Sección de información
 local InfoSection = OptionsTab:NewSection("Información de Velocidades")
 
-InfoSection:NewLabel("🐢 Normal: 2 puntos cada 0.25s")
-InfoSection:NewLabel("🐇 Rápida: 10 puntos cada 0.05s")
-InfoSection:NewLabel("⚡ Ultra: 20 puntos cada 0.025s")
+InfoSection:NewLabel("🐢 Normal: 1 en 1 (secuencial)")
+InfoSection:NewLabel("🐇 Rápida: 4 en 4 (simultáneo)")
+InfoSection:NewLabel("⚡ Ultra: 15 en 15 (simultáneo)")
 InfoSection:NewLabel("")
-InfoSection:NewLabel("⚠️ Ultra puede causar lag")
+InfoSection:NewLabel("⚠️ Ultra (15 en 15) puede causar lag")
 
 -- Keybind para toggle UI
 local KeybindSection = OptionsTab:NewSection("Keybinds")
