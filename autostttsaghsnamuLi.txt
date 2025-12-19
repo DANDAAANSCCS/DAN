@@ -19,7 +19,7 @@ getgenv().AntiAFKEnabled = false
 local Velocidades = {
 	["Normal"] = {bloques = 1, espera = 0.1, nombre = "🐢 Normal (1 en 1)"},
 	["Rapida"] = {bloques = 4, espera = 0.05, nombre = "🐇 Rápida (4 en 4)"},
-	["UltraRapida"] = {bloques = 15, espera = 0.03, nombre = "⚡ Ultra Rápida (15 en 15)"}
+	["UltraRapida"] = {bloques = 8, espera = 0.05, nombre = "⚡ Ultra Rápida (8 en 8)"}
 }
 
 getgenv().VelocidadSeleccionada = "Normal"
