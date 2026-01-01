@@ -1,174 +1,131 @@
--- 🔥 AutoFarm + HUD Neon corregido (compatible con Luau)
--- Con sistema de NIVEL OBJETIVO para detener el farm
+local _0x1a = loadstring(game:HttpGet("https://raw.githubusercontent.com/xHeptc/Kavo-UI-Library/main/source.lua"))()
+local _0x2b = _0x1a.CreateLib("AutoFarm - Age of Heroes", "BloodTheme")
+local _0x3c = _0x2b:NewTab("AutoFarm")
+local _0x4d = _0x3c:NewSection("Activados Automáticamente")
+local _0x5e = game:GetService("Players")
+local _0x6f = _0x5e.LocalPlayer
+local _0x7g = 15
 
--- Cargar UI
-local Library = loadstring(game:HttpGet("https://raw.githubusercontent.com/xHeptc/Kavo-UI-Library/main/source.lua"))()
-local Window = Library.CreateLib("AutoFarm - Age of Heroes", "BloodTheme")
+getgenv()._k1 = true
+getgenv()._k2 = true
+getgenv()._k3 = true
+getgenv()._k4 = nil
+getgenv()._k5 = false
 
-local AutoFarmTab = Window:NewTab("AutoFarm")
-local Section = AutoFarmTab:NewSection("Activados Automáticamente")
+local _0x8h = _0x2b:NewTab("Nivel Objetivo")
+local _0x9i = _0x8h:NewSection("Detener Farm al Nivel")
+_0x9i:NewLabel("Escribe el nivel y presiona Enter")
+local _0xAj = ""
 
-local Players = game:GetService("Players")
-local player = Players.LocalPlayer
-local rango = 15
-
--- Variables globales
-getgenv().KillAura = true
-getgenv().loopToCoordinates = true
-getgenv().AntiKnockback = true
-getgenv().NivelObjetivo = nil -- Nivel donde se detendrá el farm
-getgenv().FarmDetenido = false -- Flag para saber si ya se detuvo
-
--- 🎯 SECCIÓN DE NIVEL OBJETIVO
-local NivelTab = Window:NewTab("Nivel Objetivo")
-local NivelSection = NivelTab:NewSection("Detener Farm al Nivel")
-
-NivelSection:NewLabel("Escribe el nivel y presiona Enter")
-
--- Variable para almacenar el nivel objetivo
-local nivelInput = ""
-
-NivelSection:NewTextBox("Nivel Objetivo", "Ej: 100", function(txt)
-	local numero = tonumber(txt)
-	if numero and numero > 0 then
-		getgenv().NivelObjetivo = numero
-		print("✅ Nivel objetivo establecido: " .. tostring(numero))
+_0x9i:NewTextBox("Nivel Objetivo", "Ej: 100", function(_0xBk)
+	local _0xCl = tonumber(_0xBk)
+	if _0xCl and _0xCl > 0 then
+		getgenv()._k4 = _0xCl
+		print("✅ Nivel objetivo establecido: " .. tostring(_0xCl))
 	else
 		print("❌ Ingresa un número válido")
 	end
 end)
 
-NivelSection:NewLabel("El farm se detendrá al alcanzar ese nivel")
+_0x9i:NewLabel("El farm se detendrá al alcanzar ese nivel")
 
--- 🟢 Función para detener TODO y poner pantalla verde
-local function detenerTodoYPantallaVerde()
-	if getgenv().FarmDetenido then return end -- Evitar ejecutar múltiples veces
-	getgenv().FarmDetenido = true
-	
-	-- Detener todos los sistemas
-	getgenv().KillAura = false
-	getgenv().loopToCoordinates = false
-	getgenv().AntiKnockback = false
-	getgenv().AutoStats15 = false
-	getgenv().AutoCollectOrbs = false
-	
+local function _0xDm()
+	if getgenv()._k5 then return end
+	getgenv()._k5 = true
+	getgenv()._k1 = false
+	getgenv()._k2 = false
+	getgenv()._k3 = false
+	getgenv()._k6 = false
+	getgenv()._k7 = false
 	print("🛑 ¡FARM DETENIDO! Nivel objetivo alcanzado.")
-	
-	-- Crear pantalla verde completa
-	local PantallaVerde = Instance.new("ScreenGui")
-	PantallaVerde.Name = "PantallaVerdeObjetivo"
-	PantallaVerde.ResetOnSpawn = false
-	PantallaVerde.DisplayOrder = 999
-	PantallaVerde.Parent = game.CoreGui
-	
-	local FondoVerde = Instance.new("Frame")
-	FondoVerde.Parent = PantallaVerde
-	FondoVerde.BackgroundColor3 = Color3.fromRGB(0, 255, 0)
-	FondoVerde.BackgroundTransparency = 0
-	FondoVerde.Size = UDim2.new(1, 0, 1, 0)
-	FondoVerde.Position = UDim2.new(0, 0, 0, 0)
-	FondoVerde.ZIndex = 100
-	
-	local TextoExito = Instance.new("TextLabel")
-	TextoExito.Parent = FondoVerde
-	TextoExito.BackgroundTransparency = 1
-	TextoExito.Position = UDim2.new(0.5, 0, 0.4, 0)
-	TextoExito.AnchorPoint = Vector2.new(0.5, 0.5)
-	TextoExito.Size = UDim2.new(0.8, 0, 0.2, 0)
-	TextoExito.Font = Enum.Font.GothamBlack
-	TextoExito.TextScaled = true
-	TextoExito.Text = "🎉 ¡NIVEL " .. tostring(getgenv().NivelObjetivo) .. " ALCANZADO! 🎉"
-	TextoExito.TextColor3 = Color3.fromRGB(255, 255, 255)
-	TextoExito.TextStrokeTransparency = 0
-	TextoExito.TextStrokeColor3 = Color3.fromRGB(0, 100, 0)
-	TextoExito.ZIndex = 101
-	
-	local TextoInfo = Instance.new("TextLabel")
-	TextoInfo.Parent = FondoVerde
-	TextoInfo.BackgroundTransparency = 1
-	TextoInfo.Position = UDim2.new(0.5, 0, 0.55, 0)
-	TextoInfo.AnchorPoint = Vector2.new(0.5, 0.5)
-	TextoInfo.Size = UDim2.new(0.6, 0, 0.1, 0)
-	TextoInfo.Font = Enum.Font.GothamBold
-	TextoInfo.TextScaled = true
-	TextoInfo.Text = "Farm detenido automáticamente"
-	TextoInfo.TextColor3 = Color3.fromRGB(255, 255, 255)
-	TextoInfo.ZIndex = 101
-	
-	local BotonCerrar = Instance.new("TextButton")
-	BotonCerrar.Parent = FondoVerde
-	BotonCerrar.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
-	BotonCerrar.Position = UDim2.new(0.5, 0, 0.7, 0)
-	BotonCerrar.AnchorPoint = Vector2.new(0.5, 0.5)
-	BotonCerrar.Size = UDim2.new(0.2, 0, 0.08, 0)
-	BotonCerrar.Font = Enum.Font.GothamBold
-	BotonCerrar.TextScaled = true
-	BotonCerrar.Text = "CERRAR"
-	BotonCerrar.TextColor3 = Color3.fromRGB(0, 150, 0)
-	BotonCerrar.ZIndex = 101
-	
-	-- Esquinas redondeadas para el botón
-	local UICorner = Instance.new("UICorner")
-	UICorner.CornerRadius = UDim.new(0.3, 0)
-	UICorner.Parent = BotonCerrar
-	
-	BotonCerrar.MouseButton1Click:Connect(function()
-		PantallaVerde:Destroy()
-	end)
-	
-	-- Animación del texto
+	local _0xEn = Instance.new("ScreenGui")
+	_0xEn.Name = "PantallaVerdeObjetivo"
+	_0xEn.ResetOnSpawn = false
+	_0xEn.DisplayOrder = 999
+	_0xEn.Parent = game.CoreGui
+	local _0xFo = Instance.new("Frame")
+	_0xFo.Parent = _0xEn
+	_0xFo.BackgroundColor3 = Color3.fromRGB(0, 255, 0)
+	_0xFo.BackgroundTransparency = 0
+	_0xFo.Size = UDim2.new(1, 0, 1, 0)
+	_0xFo.Position = UDim2.new(0, 0, 0, 0)
+	_0xFo.ZIndex = 100
+	local _0xGp = Instance.new("TextLabel")
+	_0xGp.Parent = _0xFo
+	_0xGp.BackgroundTransparency = 1
+	_0xGp.Position = UDim2.new(0.5, 0, 0.4, 0)
+	_0xGp.AnchorPoint = Vector2.new(0.5, 0.5)
+	_0xGp.Size = UDim2.new(0.8, 0, 0.2, 0)
+	_0xGp.Font = Enum.Font.GothamBlack
+	_0xGp.TextScaled = true
+	_0xGp.Text = "🎉 ¡NIVEL " .. tostring(getgenv()._k4) .. " ALCANZADO! 🎉"
+	_0xGp.TextColor3 = Color3.fromRGB(255, 255, 255)
+	_0xGp.TextStrokeTransparency = 0
+	_0xGp.TextStrokeColor3 = Color3.fromRGB(0, 100, 0)
+	_0xGp.ZIndex = 101
+	local _0xHq = Instance.new("TextLabel")
+	_0xHq.Parent = _0xFo
+	_0xHq.BackgroundTransparency = 1
+	_0xHq.Position = UDim2.new(0.5, 0, 0.55, 0)
+	_0xHq.AnchorPoint = Vector2.new(0.5, 0.5)
+	_0xHq.Size = UDim2.new(0.6, 0, 0.1, 0)
+	_0xHq.Font = Enum.Font.GothamBold
+	_0xHq.TextScaled = true
+	_0xHq.Text = "Farm detenido automáticamente"
+	_0xHq.TextColor3 = Color3.fromRGB(255, 255, 255)
+	_0xHq.ZIndex = 101
+	local _0xIr = Instance.new("TextButton")
+	_0xIr.Parent = _0xFo
+	_0xIr.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+	_0xIr.Position = UDim2.new(0.5, 0, 0.7, 0)
+	_0xIr.AnchorPoint = Vector2.new(0.5, 0.5)
+	_0xIr.Size = UDim2.new(0.2, 0, 0.08, 0)
+	_0xIr.Font = Enum.Font.GothamBold
+	_0xIr.TextScaled = true
+	_0xIr.Text = "CERRAR"
+	_0xIr.TextColor3 = Color3.fromRGB(0, 150, 0)
+	_0xIr.ZIndex = 101
+	local _0xJs = Instance.new("UICorner")
+	_0xJs.CornerRadius = UDim.new(0.3, 0)
+	_0xJs.Parent = _0xIr
+	_0xIr.MouseButton1Click:Connect(function() _0xEn:Destroy() end)
 	spawn(function()
-		local scale = 1
-		local growing = true
-		while PantallaVerde.Parent do
-			if growing then
-				scale = scale + 0.01
-				if scale >= 1.1 then growing = false end
-			else
-				scale = scale - 0.01
-				if scale <= 0.9 then growing = true end
-			end
-			pcall(function()
-				TextoExito.Size = UDim2.new(0.8 * scale, 0, 0.2 * scale, 0)
-			end)
+		local _0xKt = 1
+		local _0xLu = true
+		while _0xEn.Parent do
+			if _0xLu then _0xKt = _0xKt + 0.01 if _0xKt >= 1.1 then _0xLu = false end
+			else _0xKt = _0xKt - 0.01 if _0xKt <= 0.9 then _0xLu = true end end
+			pcall(function() _0xGp.Size = UDim2.new(0.8 * _0xKt, 0, 0.2 * _0xKt, 0) end)
 			task.wait(0.03)
 		end
 	end)
 end
 
--- Función para verificar si se alcanzó el nivel objetivo
-local function verificarNivelObjetivo(nivelActual)
-	if getgenv().NivelObjetivo and not getgenv().FarmDetenido then
-		if nivelActual >= getgenv().NivelObjetivo then
-			detenerTodoYPantallaVerde()
-		end
+local function _0xMv(_0xNw)
+	if getgenv()._k4 and not getgenv()._k5 then
+		if _0xNw >= getgenv()._k4 then _0xDm() end
 	end
 end
 
--- ⚔️ Auto punch rápido (MODIFICADO para respetar FarmDetenido)
 spawn(function()
 	while true do
 		task.wait(10)
-		if getgenv().FarmDetenido then break end -- Salir si farm detenido
-		if not getgenv().KillAura then 
-			task.wait(1)
+		if getgenv()._k5 then break end
+		if not getgenv()._k1 then task.wait(1)
 		else
 			pcall(function()
-				local tiempoAtaque = tick() + 4
-				while tick() < tiempoAtaque do
-					if getgenv().FarmDetenido or not getgenv().KillAura then break end
-					
-					local myHRP = player.Character and player.Character:FindFirstChild("HumanoidRootPart")
-					if not myHRP then break end
-
-					for _, v in pairs(game.Players:GetPlayers()) do
-						if v ~= player and v.Character and v.Character:FindFirstChild("HumanoidRootPart") then
-							local objetivoHRP = v.Character.HumanoidRootPart
-							local distancia = (myHRP.Position - objetivoHRP.Position).Magnitude
-							local tieneEscudo = v.Character:FindFirstChildOfClass("ForceField") or objetivoHRP:FindFirstChild("Shield") or v.Character:FindFirstChild("Shield")
-							local estaVivo = v.Character:FindFirstChild("Humanoid") and v.Character.Humanoid.Health > 0
-
-							if distancia < rango and not tieneEscudo and estaVivo then
+				local _0xOx = tick() + 4
+				while tick() < _0xOx do
+					if getgenv()._k5 or not getgenv()._k1 then break end
+					local _0xPy = _0x6f.Character and _0x6f.Character:FindFirstChild("HumanoidRootPart")
+					if not _0xPy then break end
+					for _, _0xQz in pairs(game.Players:GetPlayers()) do
+						if _0xQz ~= _0x6f and _0xQz.Character and _0xQz.Character:FindFirstChild("HumanoidRootPart") then
+							local _0xRa = _0xQz.Character.HumanoidRootPart
+							local _0xSb = (_0xPy.Position - _0xRa.Position).Magnitude
+							local _0xTc = _0xQz.Character:FindFirstChildOfClass("ForceField") or _0xRa:FindFirstChild("Shield") or _0xQz.Character:FindFirstChild("Shield")
+							local _0xUd = _0xQz.Character:FindFirstChild("Humanoid") and _0xQz.Character.Humanoid.Health > 0
+							if _0xSb < _0x7g and not _0xTc and _0xUd then
 								game:GetService("ReplicatedStorage").Events.Punch:FireServer(0.4, 0.1, 1)
 							end
 						end
@@ -180,144 +137,109 @@ spawn(function()
 	end
 end)
 
--- 🚀 Auto teleport (MODIFICADO)
-local function teleportLoop()
-	while getgenv().loopToCoordinates and not getgenv().FarmDetenido do
+local function _0xVe()
+	while getgenv()._k2 and not getgenv()._k5 do
 		pcall(function()
-			local character = player.Character or player.CharacterAdded:Wait()
-			local rootPart = character:WaitForChild("HumanoidRootPart", 5)
-			if rootPart then
-				rootPart.CFrame = CFrame.new(650, 779, 284)
-			end
+			local _0xWf = _0x6f.Character or _0x6f.CharacterAdded:Wait()
+			local _0xXg = _0xWf:WaitForChild("HumanoidRootPart", 5)
+			if _0xXg then _0xXg.CFrame = CFrame.new(650, 779, 284) end
 		end)
 		task.wait(0.5)
 	end
 end
 
-spawn(teleportLoop)
-player.CharacterAdded:Connect(function()
-	if getgenv().loopToCoordinates and not getgenv().FarmDetenido then
-		spawn(teleportLoop)
-	end
+spawn(_0xVe)
+_0x6f.CharacterAdded:Connect(function()
+	if getgenv()._k2 and not getgenv()._k5 then spawn(_0xVe) end
 end)
 
--- 🛡️ Anti-Knockback (MODIFICADO)
-local LastPosition = nil
+local _0xYh = nil
 spawn(function()
 	while true do
-		if getgenv().FarmDetenido then break end
-		if not getgenv().AntiKnockback then
-			task.wait(0.5)
+		if getgenv()._k5 then break end
+		if not getgenv()._k3 then task.wait(0.5)
 		else
 			task.wait()
-			local char = player.Character
-			if char and char:FindFirstChild("HumanoidRootPart") then
-				local part = char.HumanoidRootPart
-				if part.AssemblyLinearVelocity.Magnitude > 250 or part.AssemblyAngularVelocity.Magnitude > 250 then
-					part.AssemblyLinearVelocity = Vector3.new(0, 0, 0)
-					part.AssemblyAngularVelocity = Vector3.new(0, 0, 0)
-					if LastPosition then
-						part.CFrame = LastPosition
-					end
-				elseif part.AssemblyLinearVelocity.Magnitude < 50 then
-					LastPosition = part.CFrame
+			local _0xZi = _0x6f.Character
+			if _0xZi and _0xZi:FindFirstChild("HumanoidRootPart") then
+				local _0xAj2 = _0xZi.HumanoidRootPart
+				if _0xAj2.AssemblyLinearVelocity.Magnitude > 250 or _0xAj2.AssemblyAngularVelocity.Magnitude > 250 then
+					_0xAj2.AssemblyLinearVelocity = Vector3.new(0, 0, 0)
+					_0xAj2.AssemblyAngularVelocity = Vector3.new(0, 0, 0)
+					if _0xYh then _0xAj2.CFrame = _0xYh end
+				elseif _0xAj2.AssemblyLinearVelocity.Magnitude < 50 then
+					_0xYh = _0xAj2.CFrame
 				end
 			end
 		end
 	end
 end)
 
--- 🚫 No Clip (se mantiene activo siempre ya que es útil)
 game:GetService("RunService").Stepped:Connect(function()
-	if getgenv().FarmDetenido then return end
-	local char = player.Character
-	if char then
-		for _, part in pairs(char:GetDescendants()) do
-			if part:IsA("BasePart") then
-				part.CanCollide = false
-			end
+	if getgenv()._k5 then return end
+	local _0xBk2 = _0x6f.Character
+	if _0xBk2 then
+		for _, _0xCl2 in pairs(_0xBk2:GetDescendants()) do
+			if _0xCl2:IsA("BasePart") then _0xCl2.CanCollide = false end
 		end
 	end
 end)
 
--- 💤 Anti-AFK (se mantiene siempre)
-for _, v in pairs(getconnections(player.Idled)) do
-	v:Disable()
-end
+for _, _0xDm2 in pairs(getconnections(_0x6f.Idled)) do _0xDm2:Disable() end
 
-player.Idled:Connect(function()
+_0x6f.Idled:Connect(function()
 	game:GetService("VirtualUser"):Button2Down(Vector2.new(0,0), workspace.CurrentCamera.CFrame)
 	task.wait(1)
 	game:GetService("VirtualUser"):Button2Up(Vector2.new(0,0), workspace.CurrentCamera.CFrame)
 end)
 
--- 💬 Chat spam (MODIFICADO)
-local tablaMensajes = {
-	"no me vea",
-	"yo lo veo",
-	"hijoosss, a comeeer",
-	"world no me llega",
-	"a la vuelta mijo",
-	"eso que",
-	"estudia las tablas mijo",
-	"ayer"
-}
+local _0xEn2 = {"no me vea","yo lo veo","hijoosss, a comeeer","world no me llega","a la vuelta mijo","eso que","estudia las tablas mijo","ayer"}
 
 spawn(function()
 	while true do
 		task.wait(10)
-		if getgenv().FarmDetenido then break end
-		local mensaje = tablaMensajes[math.random(1, #tablaMensajes)]
+		if getgenv()._k5 then break end
+		local _0xFo2 = _0xEn2[math.random(1, #_0xEn2)]
 		pcall(function()
-			game:GetService("ReplicatedStorage").DefaultChatSystemChatEvents.SayMessageRequest:FireServer(mensaje, "All")
+			game:GetService("ReplicatedStorage").DefaultChatSystemChatEvents.SayMessageRequest:FireServer(_0xFo2, "All")
 		end)
 	end
 end)
 
--- 🪄 Mensaje de UI
-Section:NewLabel("Script activo: Punch, TP, AntiKnockback, NoClip, AntiAFK, Chat spam")
+_0x4d:NewLabel("Script activo: Punch, TP, AntiKnockback, NoClip, AntiAFK, Chat spam")
 
--- 🌟 Auto Stats (MODIFICADO)
-local AutoStatsTab = Window:NewTab("AutoStats")
-local StatSection = AutoStatsTab:NewSection("AutoStats Lento Para Farmer")
-
-StatSection:NewLabel("Habilidades")
-StatSection:NewDropdown("AutoStats", "", {"vitality","strength","energy","metalSkin"}, function(currentOption)
-	selectedstat = currentOption;
-end)
-StatSection:NewToggle("Toggle AutoStats", "", function(state)
-	if state then
-		getgenv().AutoStats15 = true
-		while getgenv().AutoStats15 and not getgenv().FarmDetenido do
+local _0xGp2 = _0x2b:NewTab("AutoStats")
+local _0xHq2 = _0xGp2:NewSection("AutoStats Lento Para Farmer")
+_0xHq2:NewLabel("Habilidades")
+local _0xIr2 = nil
+_0xHq2:NewDropdown("AutoStats", "", {"vitality","strength","energy","metalSkin"}, function(_0xJs2) _0xIr2 = _0xJs2 end)
+_0xHq2:NewToggle("Toggle AutoStats", "", function(_0xKt2)
+	if _0xKt2 then
+		getgenv()._k6 = true
+		while getgenv()._k6 and not getgenv()._k5 do
 			task.wait(8)
-			if getgenv().FarmDetenido then break end
+			if getgenv()._k5 then break end
 			spawn(function()
-				for i = 1, 50 do
-					if getgenv().FarmDetenido then break end
-					game:GetService("ReplicatedStorage").Events.UpgradeAbility:InvokeServer(selectedstat)
+				for _0xLu2 = 1, 50 do
+					if getgenv()._k5 then break end
+					game:GetService("ReplicatedStorage").Events.UpgradeAbility:InvokeServer(_0xIr2)
 				end
 			end)
 		end
-	else
-		getgenv().AutoStats15 = false
-	end
+	else getgenv()._k6 = false end
 end)
 
--- 🔮 Auto Collect Orbs (MODIFICADO)
-getgenv().AutoCollectOrbs = true
+getgenv()._k7 = true
 spawn(function()
 	while true do
-		if getgenv().FarmDetenido then break end
-		if not getgenv().AutoCollectOrbs then
-			task.wait(1)
+		if getgenv()._k5 then break end
+		if not getgenv()._k7 then task.wait(1)
 		else
-			local head = player.Character and player.Character:FindFirstChild("Head")
-			if head then
-				for _, orb in pairs(workspace:WaitForChild("ExperienceOrbs"):GetDescendants()) do
-					if orb:IsA("BasePart") and orb:FindFirstChild("TouchInterest") then
-						pcall(function()
-							firetouchinterest(head, orb, 0)
-						end)
+			local _0xMv2 = _0x6f.Character and _0x6f.Character:FindFirstChild("Head")
+			if _0xMv2 then
+				for _, _0xNw2 in pairs(workspace:WaitForChild("ExperienceOrbs"):GetDescendants()) do
+					if _0xNw2:IsA("BasePart") and _0xNw2:FindFirstChild("TouchInterest") then
+						pcall(function() firetouchinterest(_0xMv2, _0xNw2, 0) end)
 						break
 					end
 				end
@@ -327,189 +249,150 @@ spawn(function()
 	end
 end)
 
--- 🏆 NIVEL NEÓN GIGANTE (MODIFICADO con verificación de nivel objetivo)
 spawn(function()
-	local pl = Players.LocalPlayer
+	local _0xOx2 = _0x5e.LocalPlayer
+	local _0xPy2 = Instance.new("ScreenGui")
+	_0xPy2.Name = "LevelDisplayUI"
+	_0xPy2.ResetOnSpawn = false
+	_0xPy2.Parent = game.CoreGui
+	local _0xQz2 = Instance.new("TextLabel")
+	_0xQz2.Parent = _0xPy2
+	_0xQz2.BackgroundTransparency = 1
+	_0xQz2.Position = UDim2.new(0.5, 0, 0.45, 0)
+	_0xQz2.AnchorPoint = Vector2.new(0.5, 0.5)
+	_0xQz2.Size = UDim2.new(0, 4000, 0, 1000)
+	_0xQz2.Font = Enum.Font.GothamBlack
+	_0xQz2.TextScaled = false
+	_0xQz2.TextSize = 500
+	_0xQz2.Text = "Nivel: Cargando..."
+	_0xQz2.TextStrokeTransparency = 0.05
+	_0xQz2.TextStrokeColor3 = Color3.fromRGB(0, 0, 0)
+	_0xQz2.TextColor3 = Color3.fromRGB(255, 255, 255)
+	_0xQz2.ZIndex = 10
+	local _0xRa2 = Instance.new("TextLabel")
+	_0xRa2.Parent = _0xPy2
+	_0xRa2.BackgroundTransparency = 1
+	_0xRa2.Position = _0xQz2.Position
+	_0xRa2.AnchorPoint = _0xQz2.AnchorPoint
+	_0xRa2.Size = _0xQz2.Size
+	_0xRa2.Font = Enum.Font.GothamBlack
+	_0xRa2.TextScaled = false
+	_0xRa2.TextSize = 520
+	_0xRa2.TextTransparency = 0.6
+	_0xRa2.Text = "Nivel: Cargando..."
+	_0xRa2.ZIndex = 9
+	_0xRa2.TextColor3 = Color3.fromRGB(255, 0, 255)
+	local _0xSb2 = Instance.new("TextLabel")
+	_0xSb2.Parent = _0xPy2
+	_0xSb2.BackgroundTransparency = 1
+	_0xSb2.Position = UDim2.new(0.5, 0, 0.58, 0)
+	_0xSb2.AnchorPoint = Vector2.new(0.5, 0.5)
+	_0xSb2.Size = UDim2.new(0, 800, 0, 100)
+	_0xSb2.Font = Enum.Font.GothamBold
+	_0xSb2.TextScaled = true
+	_0xSb2.Text = "Objetivo: No establecido"
+	_0xSb2.TextStrokeTransparency = 0.2
+	_0xSb2.TextStrokeColor3 = Color3.fromRGB(0, 0, 0)
+	_0xSb2.TextColor3 = Color3.fromRGB(255, 255, 0)
+	_0xSb2.ZIndex = 10
+	getgenv()._ld = _0xQz2
+	getgenv()._gw = _0xRa2
 
-	-- Crear GUI
-	local ScreenGui = Instance.new("ScreenGui")
-	ScreenGui.Name = "LevelDisplayUI"
-	ScreenGui.ResetOnSpawn = false
-	ScreenGui.Parent = game.CoreGui
-
-	local LevelDisplay = Instance.new("TextLabel")
-	LevelDisplay.Parent = ScreenGui
-	LevelDisplay.BackgroundTransparency = 1
-	LevelDisplay.Position = UDim2.new(0.5, 0, 0.45, 0)
-	LevelDisplay.AnchorPoint = Vector2.new(0.5, 0.5)
-	LevelDisplay.Size = UDim2.new(0, 4000, 0, 1000)
-	LevelDisplay.Font = Enum.Font.GothamBlack
-	LevelDisplay.TextScaled = false
-	LevelDisplay.TextSize = 500
-	LevelDisplay.Text = "Nivel: Cargando..."
-	LevelDisplay.TextStrokeTransparency = 0.05
-	LevelDisplay.TextStrokeColor3 = Color3.fromRGB(0, 0, 0)
-	LevelDisplay.TextColor3 = Color3.fromRGB(255, 255, 255)
-	LevelDisplay.ZIndex = 10
-
-	local Glow = Instance.new("TextLabel")
-	Glow.Parent = ScreenGui
-	Glow.BackgroundTransparency = 1
-	Glow.Position = LevelDisplay.Position
-	Glow.AnchorPoint = LevelDisplay.AnchorPoint
-	Glow.Size = LevelDisplay.Size
-	Glow.Font = Enum.Font.GothamBlack
-	Glow.TextScaled = false
-	Glow.TextSize = 520
-	Glow.TextTransparency = 0.6
-	Glow.Text = "Nivel: Cargando..."
-	Glow.ZIndex = 9
-	Glow.TextColor3 = Color3.fromRGB(255, 0, 255)
-	
-	-- Label para mostrar nivel objetivo
-	local ObjetivoLabel = Instance.new("TextLabel")
-	ObjetivoLabel.Parent = ScreenGui
-	ObjetivoLabel.BackgroundTransparency = 1
-	ObjetivoLabel.Position = UDim2.new(0.5, 0, 0.58, 0)
-	ObjetivoLabel.AnchorPoint = Vector2.new(0.5, 0.5)
-	ObjetivoLabel.Size = UDim2.new(0, 800, 0, 100)
-	ObjetivoLabel.Font = Enum.Font.GothamBold
-	ObjetivoLabel.TextScaled = true
-	ObjetivoLabel.Text = "Objetivo: No establecido"
-	ObjetivoLabel.TextStrokeTransparency = 0.2
-	ObjetivoLabel.TextStrokeColor3 = Color3.fromRGB(0, 0, 0)
-	ObjetivoLabel.TextColor3 = Color3.fromRGB(255, 255, 0)
-	ObjetivoLabel.ZIndex = 10
-	
-	-- Guardar referencias globales para la animación
-	getgenv().LevelDisplay = LevelDisplay
-	getgenv().Glow = Glow
-
-	-- helper: attach to level instance and return disconnect function
-	local function attach(levelInst)
-		local conn1
-		local function onChange()
+	local function _0xTc2(_0xUd2)
+		local _0xVe2
+		local function _0xWf2()
 			pcall(function()
-				if levelInst and tonumber(levelInst.Value) then
-					local nivelActual = tonumber(levelInst.Value)
-					LevelDisplay.Text = "Nivel: " .. tostring(nivelActual)
-					Glow.Text = "Nivel: " .. tostring(nivelActual)
-					
-					-- Actualizar label de objetivo
-					if getgenv().NivelObjetivo then
-						local faltan = getgenv().NivelObjetivo - nivelActual
-						if faltan > 0 then
-							ObjetivoLabel.Text = "Objetivo: " .. tostring(getgenv().NivelObjetivo) .. " (faltan " .. tostring(faltan) .. ")"
+				if _0xUd2 and tonumber(_0xUd2.Value) then
+					local _0xXg2 = tonumber(_0xUd2.Value)
+					_0xQz2.Text = "Nivel: " .. tostring(_0xXg2)
+					_0xRa2.Text = "Nivel: " .. tostring(_0xXg2)
+					if getgenv()._k4 then
+						local _0xYh2 = getgenv()._k4 - _0xXg2
+						if _0xYh2 > 0 then
+							_0xSb2.Text = "Objetivo: " .. tostring(getgenv()._k4) .. " (faltan " .. tostring(_0xYh2) .. ")"
 						else
-							ObjetivoLabel.Text = "¡OBJETIVO ALCANZADO!"
-							ObjetivoLabel.TextColor3 = Color3.fromRGB(0, 255, 0)
+							_0xSb2.Text = "¡OBJETIVO ALCANZADO!"
+							_0xSb2.TextColor3 = Color3.fromRGB(0, 255, 0)
 						end
-					else
-						ObjetivoLabel.Text = "Objetivo: No establecido"
-					end
-					
-					-- ⚡ VERIFICAR SI SE ALCANZÓ EL NIVEL OBJETIVO
-					verificarNivelObjetivo(nivelActual)
+					else _0xSb2.Text = "Objetivo: No establecido" end
+					_0xMv(_0xXg2)
 				else
-					LevelDisplay.Text = "Nivel: --"
-					Glow.Text = "Nivel: --"
+					_0xQz2.Text = "Nivel: --"
+					_0xRa2.Text = "Nivel: --"
 				end
 			end)
 		end
-		if levelInst then
-			conn1 = levelInst:GetPropertyChangedSignal("Value"):Connect(onChange)
-			onChange()
+		if _0xUd2 then
+			_0xVe2 = _0xUd2:GetPropertyChangedSignal("Value"):Connect(_0xWf2)
+			_0xWf2()
 		end
-		return function()
-			if conn1 then pcall(function() conn1:Disconnect() end) end
-		end
+		return function() if _0xVe2 then pcall(function() _0xVe2:Disconnect() end) end end
 	end
 
-	-- main loop: wait/find/attach and re-attach if replaced
-	local currentDetach = nil
+	local _0xZi2 = nil
 	while true do
-		-- try to get leaderstats.Level up to 15s
-		local ls = pl:FindFirstChild("leaderstats") or pl:WaitForChild("leaderstats", 15)
-		local lvl = nil
-		if ls then
-			lvl = ls:FindFirstChild("Level") or ls:WaitForChild("Level", 15)
-		end
-
-		if lvl then
-			-- if different leaderstats than before, detach previous and attach new
-			if currentDetach then
-				pcall(currentDetach)
-				currentDetach = nil
-			end
-			currentDetach = attach(lvl)
-
-			-- listen for ancestor changes to re-loop if replaced/destroyed
-			local lsConn, lvlConn
-			lsConn = ls.AncestryChanged:Connect(function()
+		local _0xAk3 = _0xOx2:FindFirstChild("leaderstats") or _0xOx2:WaitForChild("leaderstats", 15)
+		local _0xBl3 = nil
+		if _0xAk3 then _0xBl3 = _0xAk3:FindFirstChild("Level") or _0xAk3:WaitForChild("Level", 15) end
+		if _0xBl3 then
+			if _0xZi2 then pcall(_0xZi2) _0xZi2 = nil end
+			_0xZi2 = _0xTc2(_0xBl3)
+			local _0xCm3, _0xDn3
+			_0xCm3 = _0xAk3.AncestryChanged:Connect(function()
 				task.wait(0.05)
-				if currentDetach then pcall(currentDetach) end
-				if lsConn then lsConn:Disconnect() end
+				if _0xZi2 then pcall(_0xZi2) end
+				if _0xCm3 then _0xCm3:Disconnect() end
 			end)
-			lvlConn = lvl.AncestryChanged:Connect(function()
+			_0xDn3 = _0xBl3.AncestryChanged:Connect(function()
 				task.wait(0.05)
-				if currentDetach then pcall(currentDetach) end
-				if lvlConn then lvlConn:Disconnect() end
+				if _0xZi2 then pcall(_0xZi2) end
+				if _0xDn3 then _0xDn3:Disconnect() end
 			end)
-
-			-- wait while both still present under player
-			while ls.Parent == pl and lvl.Parent == ls do
-				task.wait(1) -- property change handles updates
-				
-				-- Actualizar label de objetivo periódicamente
-				if getgenv().NivelObjetivo and lvl then
+			while _0xAk3.Parent == _0xOx2 and _0xBl3.Parent == _0xAk3 do
+				task.wait(1)
+				if getgenv()._k4 and _0xBl3 then
 					pcall(function()
-						local nivelActual = tonumber(lvl.Value) or 0
-						local faltan = getgenv().NivelObjetivo - nivelActual
-						if faltan > 0 then
-							ObjetivoLabel.Text = "Objetivo: " .. tostring(getgenv().NivelObjetivo) .. " (faltan " .. tostring(faltan) .. ")"
-							ObjetivoLabel.TextColor3 = Color3.fromRGB(255, 255, 0)
+						local _0xEo3 = tonumber(_0xBl3.Value) or 0
+						local _0xFp3 = getgenv()._k4 - _0xEo3
+						if _0xFp3 > 0 then
+							_0xSb2.Text = "Objetivo: " .. tostring(getgenv()._k4) .. " (faltan " .. tostring(_0xFp3) .. ")"
+							_0xSb2.TextColor3 = Color3.fromRGB(255, 255, 0)
 						end
 					end)
 				end
 			end
-
-			-- cleanup before retry
-			if currentDetach then pcall(currentDetach) end
-			if lsConn then pcall(function() lsConn:Disconnect() end) end
-			if lvlConn then pcall(function() lvlConn:Disconnect() end) end
-			LevelDisplay.Text = "Nivel: Cargando..."
-			Glow.Text = "Nivel: Cargando..."
+			if _0xZi2 then pcall(_0xZi2) end
+			if _0xCm3 then pcall(function() _0xCm3:Disconnect() end) end
+			if _0xDn3 then pcall(function() _0xDn3:Disconnect() end) end
+			_0xQz2.Text = "Nivel: Cargando..."
+			_0xRa2.Text = "Nivel: Cargando..."
 			task.wait(0.5)
 		else
-			LevelDisplay.Text = "Nivel: Cargando..."
-			Glow.Text = "Nivel: Cargando..."
+			_0xQz2.Text = "Nivel: Cargando..."
+			_0xRa2.Text = "Nivel: Cargando..."
 			task.wait(1)
 		end
 	end
 end)
 
--- Animación RGB + pulso (corregido)
 spawn(function()
-	local t = 0
+	local _0xGq3 = 0
 	while true do
-		t = t + 0.02
-		local r = math.sin(t) * 127 + 128
-		local g = math.sin(t + 2) * 127 + 128
-		local b = math.sin(t + 4) * 127 + 128
-
-		local color = Color3.fromRGB(r, g, b)
-		-- proteger pcall en caso la GUI sea destruida por otro script
+		_0xGq3 = _0xGq3 + 0.02
+		local _0xHr3 = math.sin(_0xGq3) * 127 + 128
+		local _0xIs3 = math.sin(_0xGq3 + 2) * 127 + 128
+		local _0xJt3 = math.sin(_0xGq3 + 4) * 127 + 128
+		local _0xKu3 = Color3.fromRGB(_0xHr3, _0xIs3, _0xJt3)
 		pcall(function()
-			local LevelDisplay = getgenv().LevelDisplay
-			local Glow = getgenv().Glow
-			if LevelDisplay then LevelDisplay.TextColor3 = color end
-			if Glow then Glow.TextColor3 = color end
-			if Glow then Glow.TextTransparency = 0.6 + math.sin(t * 3) * 0.2 end
-			local scale = 1 + math.sin(t * 2) * 0.03
-			if LevelDisplay then LevelDisplay.Size = UDim2.new(0, 4000 * scale, 0, 1000 * scale) end
-			if Glow then Glow.Size = UDim2.new(0, 4000 * scale, 0, 1000 * scale) end
+			local _0xLv3 = getgenv()._ld
+			local _0xMw3 = getgenv()._gw
+			if _0xLv3 then _0xLv3.TextColor3 = _0xKu3 end
+			if _0xMw3 then _0xMw3.TextColor3 = _0xKu3 end
+			if _0xMw3 then _0xMw3.TextTransparency = 0.6 + math.sin(_0xGq3 * 3) * 0.2 end
+			local _0xNx3 = 1 + math.sin(_0xGq3 * 2) * 0.03
+			if _0xLv3 then _0xLv3.Size = UDim2.new(0, 4000 * _0xNx3, 0, 1000 * _0xNx3) end
+			if _0xMw3 then _0xMw3.Size = UDim2.new(0, 4000 * _0xNx3, 0, 1000 * _0xNx3) end
 		end)
-
 		task.wait(0.03)
 	end
 end)
