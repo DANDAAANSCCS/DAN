@@ -1,577 +1,333 @@
--- Cargar UI
-local Library = loadstring(game:HttpGet("https://raw.githubusercontent.com/xHeptc/Kavo-UI-Library/main/source.lua"))()
-local Window = Library.CreateLib("Auto TP Loop por Chat", "Ocean")
+local _L = loadstring(game:HttpGet("https://raw.githubusercontent.com/xHeptc/Kavo-UI-Library/main/source.lua"))()
+local _W = _L.CreateLib("TP", "Ocean")
+local _T1 = _W:NewTab("Main")
+local _S1 = _T1:NewSection("Auto")
+local _P = game:GetService("Players")
+local _lp = _P.LocalPlayer
+local _on = ""
+local _dt = "atras"
+local _no = nil
+local _ara = false
+local _NM = 1800
+local _TR = 25
+local _CO = Vector3.new(650, 779, 284)
+local _RD = 15
+local _dirs = {"adelante","atras","derecha","izquierda","diag_adel_der","diag_adel_izq","diag_atras_der","diag_atras_izq"}
 
-local MainTab = Window:NewTab("Main")
-local MainSection = MainTab:NewSection("Todo activo automáticamente")
-
-local Players = game:GetService("Players")
-local player = Players.LocalPlayer
-local objetivoNombre = ""
-local direccionTP = "atras"
-
--- ✅ Variables para el sistema de nivel y auto-reset
-local nivelObjetivo = nil
-local autoResetActivo = false
-local NIVEL_MINIMO = 1800
-local TIEMPO_RESET = 25 -- segundos entre cada reset
-
--- ✅ COORDENADAS DE DETECCIÓN (respaldo)
-local COORDENADAS_OBJETIVO = Vector3.new(650, 779, 284)
-local RADIO_DETECCION = 15 -- Radio en studs para detectar jugadores cerca de las coordenadas
-
--- ✅ NUEVAS direcciones (8 total)
-local direcciones = {
-	"adelante", "atras", "derecha", "izquierda",
-	"diag_adel_der", "diag_adel_izq", "diag_atras_der", "diag_atras_izq"
-}
-
--- ✅ Elegir dirección aleatoria (distinta a la anterior)
-local function elegirDireccion()
-	local nueva
-	repeat
-		nueva = direcciones[math.random(1, #direcciones)]
-	until nueva ~= direccionTP
-	direccionTP = nueva
-	print("📌 Nueva dirección de TP: " .. direccionTP)
+local function _ed()
+	local _n
+	repeat _n = _dirs[math.random(1,#_dirs)] until _n ~= _dt
+	_dt = _n
 end
 
--- ✅ Función para obtener el nivel del jugador objetivo
-local function obtenerNivelObjetivo()
-	if objetivoNombre == "" then return nil end
-	
-	local objetivo = Players:FindFirstChild(objetivoNombre)
-	if not objetivo then return nil end
-	
-	local leaderstats = objetivo:FindFirstChild("leaderstats")
-	if not leaderstats then return nil end
-	
-	local levelValue = leaderstats:FindFirstChild("Level")
-	if not levelValue then return nil end
-	
-	return tonumber(levelValue.Value)
+local function _gnl()
+	if _on == "" then return nil end
+	local _o = _P:FindFirstChild(_on)
+	if not _o then return nil end
+	local _ls = _o:FindFirstChild("leaderstats")
+	if not _ls then return nil end
+	local _lv = _ls:FindFirstChild("Level")
+	if not _lv then return nil end
+	return tonumber(_lv.Value)
 end
 
--- ✅ Función para hacer reset del personaje
-local function hacerReset()
+local function _hr()
 	pcall(function()
-		local character = player.Character
-		if character then
-			local humanoid = character:FindFirstChildOfClass("Humanoid")
-			if humanoid then
-				humanoid.Health = 0
-			end
+		local _c = _lp.Character
+		if _c then
+			local _h = _c:FindFirstChildOfClass("Humanoid")
+			if _h then _h.Health = 0 end
 		end
 	end)
 end
 
--- ✅ Función para establecer nuevo objetivo y verificar nivel
-local function establecerObjetivo(nombreJugador, fuente)
-	if nombreJugador == player.Name then return end -- No hacerse objetivo a sí mismo
-	if nombreJugador == objetivoNombre then return end -- Ya es el objetivo actual
-	
-	objetivoNombre = nombreJugador
-	print("🎯 [" .. fuente .. "] Nuevo objetivo: " .. objetivoNombre)
-	
-	-- Verificar nivel inmediatamente al detectar nuevo objetivo
+local function _so(_nm, _f)
+	if _nm == _lp.Name then return end
+	if _nm == _on then return end
+	_on = _nm
 	task.spawn(function()
-		task.wait(0.5) -- Pequeña espera para asegurar que leaderstats esté cargado
-		local nivel = obtenerNivelObjetivo()
-		if nivel then
-			print("🎯 Objetivo detectado: " .. objetivoNombre .. " | Nivel: " .. tostring(nivel))
-			
-			if nivel < NIVEL_MINIMO then
-				if not autoResetActivo then
-					autoResetActivo = true
-					print("⚠️ Nivel menor a " .. NIVEL_MINIMO .. " - Auto Reset ACTIVADO (cada " .. TIEMPO_RESET .. "s)")
-				end
+		task.wait(0.5)
+		local _nv = _gnl()
+		if _nv then
+			if _nv < _NM then
+				if not _ara then _ara = true end
 			else
-				autoResetActivo = false
-				print("✅ Nivel mayor o igual a " .. NIVEL_MINIMO .. " - Auto Reset DESACTIVADO")
+				_ara = false
 			end
-		else
-			print("⚠️ No se pudo obtener el nivel de: " .. objetivoNombre)
 		end
 	end)
 end
 
--- ═══════════════════════════════════════════════════════════════
--- ✅ SISTEMA DE DETECCIÓN POR COORDENADAS (RESPALDO)
--- Detecta jugadores cerca de las coordenadas: 650, 779, 284
--- ═══════════════════════════════════════════════════════════════
-local function detectarJugadorEnCoordenadas()
-	for _, jugador in ipairs(Players:GetPlayers()) do
-		if jugador ~= player and jugador.Character then
-			local root = jugador.Character:FindFirstChild("HumanoidRootPart")
-			if root then
-				local distancia = (root.Position - COORDENADAS_OBJETIVO).Magnitude
-				if distancia <= RADIO_DETECCION then
-					return jugador.Name
-				end
+local function _djc()
+	for _, _j in ipairs(_P:GetPlayers()) do
+		if _j ~= _lp and _j.Character then
+			local _r = _j.Character:FindFirstChild("HumanoidRootPart")
+			if _r then
+				local _d = (_r.Position - _CO).Magnitude
+				if _d <= _RD then return _j.Name end
 			end
 		end
 	end
 	return nil
 end
 
--- ✅ Loop de detección por coordenadas (ejecuta cada 1 segundo)
 spawn(function()
 	while true do
 		task.wait(1)
-		
-		-- Solo buscar si no hay objetivo actual o el objetivo ya no existe
-		local objetivoActual = Players:FindFirstChild(objetivoNombre)
-		local buscarNuevo = (objetivoNombre == "") or (not objetivoActual) or (not objetivoActual.Character)
-		
-		if buscarNuevo then
-			local jugadorEnCoordenadas = detectarJugadorEnCoordenadas()
-			if jugadorEnCoordenadas then
-				establecerObjetivo(jugadorEnCoordenadas, "COORDENADAS")
-				print("📍 Jugador detectado en coordenadas (" .. tostring(COORDENADAS_OBJETIVO) .. "): " .. jugadorEnCoordenadas)
-			end
+		local _oa = _P:FindFirstChild(_on)
+		local _bn = (_on == "") or (not _oa) or (not _oa.Character)
+		if _bn then
+			local _jc = _djc()
+			if _jc then _so(_jc, "C") end
 		end
 	end
 end)
 
--- ✅ Verificación adicional: si el objetivo actual se mueve a las coordenadas, confirmar
 spawn(function()
 	while true do
 		task.wait(2)
-		
-		local jugadorEnCoordenadas = detectarJugadorEnCoordenadas()
-		if jugadorEnCoordenadas and jugadorEnCoordenadas ~= objetivoNombre then
-			-- Hay un jugador diferente en las coordenadas, cambiar objetivo
-			establecerObjetivo(jugadorEnCoordenadas, "COORDENADAS-UPDATE")
-			print("🔄 Cambio de objetivo por coordenadas: " .. jugadorEnCoordenadas)
-		end
+		local _jc = _djc()
+		if _jc and _jc ~= _on then _so(_jc, "U") end
 	end
 end)
 
--- ═══════════════════════════════════════════════════════════════
--- ✅ SISTEMA DE DETECCIÓN POR CHAT (ORIGINAL)
--- ═══════════════════════════════════════════════════════════════
-local ChatService = game:GetService("ReplicatedStorage"):WaitForChild("DefaultChatSystemChatEvents")
-ChatService.OnMessageDoneFiltering.OnClientEvent:Connect(function(messageData)
-	local sender = messageData.FromSpeaker
-	if sender and sender ~= player.Name then
-		establecerObjetivo(sender, "CHAT")
-	end
+pcall(function()
+	local _CS = game:GetService("ReplicatedStorage"):WaitForChild("DefaultChatSystemChatEvents")
+	_CS.OnMessageDoneFiltering.OnClientEvent:Connect(function(_md)
+		local _s = _md.FromSpeaker
+		if _s and _s ~= _lp.Name then _so(_s, "M") end
+	end)
 end)
 
--- ✅ Sistema de Auto Reset cada 25 segundos si el nivel es menor a 1800
 spawn(function()
 	while true do
-		task.wait(1) -- Verificar cada segundo
-		
-		if autoResetActivo and objetivoNombre ~= "" then
-			local nivel = obtenerNivelObjetivo()
-			
-			if nivel then
-				if nivel < NIVEL_MINIMO then
-					print("⏳ Auto Reset en " .. TIEMPO_RESET .. " segundos... (Nivel objetivo: " .. tostring(nivel) .. ")")
-					
-					-- Esperar 25 segundos verificando cada segundo
-					local tiempoRestante = TIEMPO_RESET
-					while tiempoRestante > 0 and autoResetActivo do
+		task.wait(1)
+		if _ara and _on ~= "" then
+			local _nv = _gnl()
+			if _nv then
+				if _nv < _NM then
+					local _tr = _TR
+					while _tr > 0 and _ara do
 						task.wait(1)
-						tiempoRestante = tiempoRestante - 1
-						
-						-- Re-verificar nivel durante la espera
-						local nivelActual = obtenerNivelObjetivo()
-						if nivelActual and nivelActual >= NIVEL_MINIMO then
-							autoResetActivo = false
-							print("✅ Nivel alcanzó " .. NIVEL_MINIMO .. " - Auto Reset CANCELADO")
+						_tr = _tr - 1
+						local _na = _gnl()
+						if _na and _na >= _NM then
+							_ara = false
 							break
 						end
 					end
-					
-					-- Si todavía está activo después de esperar, hacer reset
-					if autoResetActivo then
-						print("🔄 Ejecutando Auto Reset...")
-						hacerReset()
-					end
+					if _ara then _hr() end
 				else
-					autoResetActivo = false
-					print("✅ Nivel ya es >= " .. NIVEL_MINIMO .. " - Auto Reset DESACTIVADO")
+					_ara = false
 				end
 			end
 		end
 	end
 end)
 
--- ✅ Verificar nivel periódicamente para reactivar auto-reset si cambia de objetivo
 spawn(function()
 	while true do
 		task.wait(5)
-		if objetivoNombre ~= "" then
-			local nivel = obtenerNivelObjetivo()
-			if nivel then
-				if nivel < NIVEL_MINIMO and not autoResetActivo then
-					autoResetActivo = true
-					print("🔄 Re-activando Auto Reset - Nivel: " .. tostring(nivel))
-				elseif nivel >= NIVEL_MINIMO and autoResetActivo then
-					autoResetActivo = false
-					print("✅ Desactivando Auto Reset - Nivel: " .. tostring(nivel))
+		if _on ~= "" then
+			local _nv = _gnl()
+			if _nv then
+				if _nv < _NM and not _ara then
+					_ara = true
+				elseif _nv >= _NM and _ara then
+					_ara = false
 				end
 			end
 		end
 	end
 end)
 
--- ✅ Elegir nueva dirección de TP al reaparecer
-player.CharacterAdded:Connect(function()
+_lp.CharacterAdded:Connect(function()
 	task.wait(1)
-	elegirDireccion()
+	_ed()
 end)
 
--- ✅ Anti-AFK
-for _, v in pairs(getconnections(player.Idled)) do v:Disable() end
-player.Idled:Connect(function()
-	game:GetService("VirtualUser"):Button2Down(Vector2.new(), workspace.CurrentCamera.CFrame)
-	wait(1)
-	game:GetService("VirtualUser"):Button2Up(Vector2.new(), workspace.CurrentCamera.CFrame)
+pcall(function()
+	for _, _v in pairs(getconnections(_lp.Idled)) do _v:Disable() end
+	_lp.Idled:Connect(function()
+		game:GetService("VirtualUser"):Button2Down(Vector2.new(), workspace.CurrentCamera.CFrame)
+		wait(1)
+		game:GetService("VirtualUser"):Button2Up(Vector2.new(), workspace.CurrentCamera.CFrame)
+	end)
 end)
 
--- ✅ No Clip permanente
 game:GetService("RunService").Stepped:Connect(function()
-	local char = player.Character
-	if char then
-		for _, part in pairs(char:GetDescendants()) do
-			if part:IsA("BasePart") then
-				part.CanCollide = false
-			end
+	local _c = _lp.Character
+	if _c then
+		for _, _p in pairs(_c:GetDescendants()) do
+			if _p:IsA("BasePart") then _p.CanCollide = false end
 		end
 	end
 end)
 
--- ✅ Anti-Knockback
-local LastPosition = nil
+local _LP = nil
 spawn(function()
 	while true do
 		task.wait()
-		local char = player.Character
-		if char and char:FindFirstChild("HumanoidRootPart") then
-			local root = char.HumanoidRootPart
-			if root.AssemblyLinearVelocity.Magnitude > 250 or root.AssemblyAngularVelocity.Magnitude > 250 then
-				root.AssemblyLinearVelocity = Vector3.zero
-				root.AssemblyAngularVelocity = Vector3.zero
-				if LastPosition then
-					root.CFrame = LastPosition
-				end
-			elseif root.AssemblyLinearVelocity.Magnitude < 50 then
-				LastPosition = root.CFrame
+		local _c = _lp.Character
+		if _c and _c:FindFirstChild("HumanoidRootPart") then
+			local _r = _c.HumanoidRootPart
+			if _r.AssemblyLinearVelocity.Magnitude > 250 or _r.AssemblyAngularVelocity.Magnitude > 250 then
+				_r.AssemblyLinearVelocity = Vector3.zero
+				_r.AssemblyAngularVelocity = Vector3.zero
+				if _LP then _r.CFrame = _LP end
+			elseif _r.AssemblyLinearVelocity.Magnitude < 50 then
+				_LP = _r.CFrame
 			end
 		end
 	end
 end)
 
--- ✅ TP loop con 8 direcciones posibles
 spawn(function()
 	while true do
 		wait(0.005)
 		pcall(function()
-			if objetivoNombre == "" then return end
-			local objetivo = Players:FindFirstChild(objetivoNombre)
-			local miChar = player.Character
-			if objetivo and objetivo.Character and miChar then
-				local miRoot = miChar:FindFirstChild("HumanoidRootPart")
-				local objRoot = objetivo.Character:FindFirstChild("HumanoidRootPart")
-				if miRoot and objRoot then
-					local offset = Vector3.new()
-					local dir = objRoot.CFrame.LookVector
-					local right = objRoot.CFrame.RightVector
-					local distancia = 3 -- ← ligeramente más lejos
-
-					if direccionTP == "atras" then
-						offset = -dir * distancia
-					elseif direccionTP == "adelante" then
-						offset = dir * distancia
-					elseif direccionTP == "derecha" then
-						offset = right * distancia
-					elseif direccionTP == "izquierda" then
-						offset = -right * distancia
-					elseif direccionTP == "diag_adel_der" then
-						offset = (dir + right).Unit * distancia
-					elseif direccionTP == "diag_adel_izq" then
-						offset = (dir - right).Unit * distancia
-					elseif direccionTP == "diag_atras_der" then
-						offset = (-dir + right).Unit * distancia
-					elseif direccionTP == "diag_atras_izq" then
-						offset = (-dir - right).Unit * distancia
+			if _on == "" then return end
+			local _o = _P:FindFirstChild(_on)
+			local _mc = _lp.Character
+			if _o and _o.Character and _mc then
+				local _mr = _mc:FindFirstChild("HumanoidRootPart")
+				local _or = _o.Character:FindFirstChild("HumanoidRootPart")
+				if _mr and _or then
+					local _of = Vector3.new()
+					local _dir = _or.CFrame.LookVector
+					local _rt = _or.CFrame.RightVector
+					local _ds = 3
+					if _dt == "atras" then _of = -_dir * _ds
+					elseif _dt == "adelante" then _of = _dir * _ds
+					elseif _dt == "derecha" then _of = _rt * _ds
+					elseif _dt == "izquierda" then _of = -_rt * _ds
+					elseif _dt == "diag_adel_der" then _of = (_dir + _rt).Unit * _ds
+					elseif _dt == "diag_adel_izq" then _of = (_dir - _rt).Unit * _ds
+					elseif _dt == "diag_atras_der" then _of = (-_dir + _rt).Unit * _ds
+					elseif _dt == "diag_atras_izq" then _of = (-_dir - _rt).Unit * _ds
 					end
-
-					miRoot.CFrame = objRoot.CFrame + offset
+					_mr.CFrame = _or.CFrame + _of
 				end
 			end
 		end)
 	end
 end)
 
-MainSection:NewLabel("TP Loop con 8 direcciones (cambia al reaparecer)")
-MainSection:NewLabel("🎯 Auto Reset si nivel < 1800 (cada 25s)")
-MainSection:NewLabel("📍 Detección por coordenadas: ACTIVA")
+_S1:NewLabel("8 Dir TP")
 
--- ✅ AutoStats UI (Modo explosivo: hasta 100,000 puntos en ráfagas de 2x)
-local AutoStatsTab = Window:NewTab("AutoStats")
-local Auto = AutoStatsTab:NewSection("Auto distribución de stats")
-
+local _T2 = _W:NewTab("Stats")
+local _S2 = _T2:NewSection("Auto")
 _G.Point = 0
 _G.Stat = nil
+local _sm = {["F"] = "strength",["E"] = "energy",["V"] = "vitality",["M"] = "metalSkin"}
 
-local statMap = {
-	["Fuerza"] = "strength",
-	["Energía"] = "energy",
-	["Vitalidad"] = "vitality",
-	["Metal"] = "metalSkin"
-}
-
--- Slider hasta 100,000, en pasos de 2
-Auto:NewSlider("Puntos a aplicar", "Múltiplos de 2", 5000, 0, function(value)
-	_G.Point = math.floor(value / 2) * 2
-end)
-
-Auto:NewDropdown("Elegir Stat", "Selecciona un stat", {"Fuerza", "Energía", "Vitalidad", "Metal"}, function(nombreVisible)
-	_G.Stat = statMap[nombreVisible]
-end)
-
-Auto:NewButton("Aplicar puntos", "Modo ráfaga (2 por hilo)", function()
-	if not _G.Stat then
-		warn("Selecciona un stat válido.")
-		return
-	end
-	if _G.Point < 10 then
-		warn("Mínimo10 puntos.")
-		return
-	end
-
-	local lotes = math.floor(_G.Point / 10)
-	for i = 1, lotes do
+_S2:NewSlider("Pts", "", 5000, 0, function(_v) _G.Point = math.floor(_v / 2) * 2 end)
+_S2:NewDropdown("Stat", "", {"F", "E", "V", "M"}, function(_nv) _G.Stat = _sm[_nv] end)
+_S2:NewButton("Go", "", function()
+	if not _G.Stat then return end
+	if _G.Point < 10 then return end
+	local _lt = math.floor(_G.Point / 10)
+	for _i = 1, _lt do
 		spawn(function()
-			for j = 1, 10 do
+			for _j = 1, 10 do
 				game:GetService("ReplicatedStorage").Events.UpgradeAbility:InvokeServer(_G.Stat)
 			end
 		end)
 		wait(0.1)
 	end
-
-	print("⚡ Aplicados " .. _G.Point .. " puntos a " .. _G.Stat .. " en bloques de 2")
 end)
 
--- ✅ Nueva pestaña para configurar el sistema de nivel
-local NivelTab = Window:NewTab("Auto Reset")
-local NivelSection = NivelTab:NewSection("Sistema de Nivel")
+local _T3 = _W:NewTab("Rst")
+local _S3 = _T3:NewSection("Lvl")
 
-NivelSection:NewLabel("Reset automático si nivel < 1800")
-
-NivelSection:NewButton("Ver estado actual", "Muestra info del objetivo", function()
-	if objetivoNombre == "" then
-		print("⚠️ No hay objetivo detectado aún")
-		return
-	end
-	
-	local nivel = obtenerNivelObjetivo()
-	if nivel then
-		print("═══════════════════════════════")
-		print("🎯 Objetivo: " .. objetivoNombre)
-		print("📊 Nivel: " .. tostring(nivel))
-		print("🔄 Auto Reset: " .. (autoResetActivo and "ACTIVO" or "INACTIVO"))
-		print("📌 Umbral: " .. NIVEL_MINIMO)
-		print("═══════════════════════════════")
-	else
-		print("⚠️ No se pudo obtener el nivel de: " .. objetivoNombre)
+_S3:NewButton("Info", "", function()
+	if _on == "" then return end
+	local _nv = _gnl()
+	if _nv then
+		print(_on .. " | Lvl: " .. tostring(_nv) .. " | AR: " .. (_ara and "ON" or "OFF"))
 	end
 end)
 
-NivelSection:NewToggle("Forzar Auto Reset", "Activar/desactivar manualmente", function(state)
-	autoResetActivo = state
-	if state then
-		print("🔄 Auto Reset FORZADO - Activado manualmente")
-	else
-		print("⛔ Auto Reset DESACTIVADO manualmente")
-	end
+_S3:NewToggle("Force", "", function(_st) _ara = _st end)
+
+local _T4 = _W:NewTab("Pos")
+local _S4 = _T4:NewSection("Coord")
+
+_S4:NewButton("Scan", "", function()
+	local _j = _djc()
+	if _j then _so(_j, "M") end
 end)
 
--- ═══════════════════════════════════════════════════════════════
--- ✅ NUEVA PESTAÑA: DETECCIÓN POR COORDENADAS
--- ═══════════════════════════════════════════════════════════════
-local CoordTab = Window:NewTab("Coordenadas")
-local CoordSection = CoordTab:NewSection("Detección por posición")
+_S4:NewSlider("Rad", "", 50, 5, function(_v) _RD = _v end)
 
-CoordSection:NewLabel("Coordenadas: 650, 779, 284")
-CoordSection:NewLabel("Radio de detección: " .. RADIO_DETECCION .. " studs")
-
-CoordSection:NewButton("Buscar jugador ahora", "Busca manualmente en las coordenadas", function()
-	local jugador = detectarJugadorEnCoordenadas()
-	if jugador then
-		establecerObjetivo(jugador, "MANUAL-COORD")
-		print("✅ Jugador encontrado: " .. jugador)
-	else
-		print("❌ No hay jugadores cerca de las coordenadas")
-	end
-end)
-
-CoordSection:NewButton("Ver jugadores cercanos", "Lista jugadores cerca de las coords", function()
-	print("═══════════════════════════════")
-	print("📍 Coordenadas objetivo: " .. tostring(COORDENADAS_OBJETIVO))
-	print("📏 Radio: " .. RADIO_DETECCION .. " studs")
-	print("───────────────────────────────")
-	
-	local encontrados = 0
-	for _, jugador in ipairs(Players:GetPlayers()) do
-		if jugador ~= player and jugador.Character then
-			local root = jugador.Character:FindFirstChild("HumanoidRootPart")
-			if root then
-				local distancia = (root.Position - COORDENADAS_OBJETIVO).Magnitude
-				if distancia <= RADIO_DETECCION * 2 then -- Mostrar hasta el doble del radio
-					encontrados = encontrados + 1
-					local estado = distancia <= RADIO_DETECCION and "✅ EN RANGO" or "⚠️ CERCA"
-					print(estado .. " | " .. jugador.Name .. " | Distancia: " .. math.floor(distancia) .. " studs")
-				end
-			end
-		end
-	end
-	
-	if encontrados == 0 then
-		print("❌ No hay jugadores cerca de las coordenadas")
-	end
-	print("═══════════════════════════════")
-end)
-
-CoordSection:NewSlider("Radio de detección", "Studs", 50, 5, function(value)
-	RADIO_DETECCION = value
-	print("📏 Radio de detección actualizado: " .. value .. " studs")
-end)
-
-
----------------------------------------------------------------
--- 🔥 ELIMINADOR REFORZADO SEGURO: leaderstats + nombres + GUIs
--- 🔒 NO elimina la UI del script ("Kavo UI" / "Auto TP Loop por Chat")
--- ⚠️ MODIFICADO: NO elimina leaderstats de otros jugadores para poder leer su nivel
----------------------------------------------------------------
 spawn(function()
-	local Players = game:GetService("Players")
-	local CoreGui = game:GetService("CoreGui")
-
-	-- helper: detectar nombres de leaderboard/scoreboard
-	local function isScoreboardName(name)
-		if not name then return false end
-		local n = name:lower()
-		return string.find(n, "leader") or string.find(n, "score") or string.find(n, "board") or string.find(n, "playerlist") or string.find(n, "list")
+	local _CG = game:GetService("CoreGui")
+	local function _isn(_n)
+		if not _n then return false end
+		local _nl = _n:lower()
+		return string.find(_nl, "leader") or string.find(_nl, "score") or string.find(_nl, "board") or string.find(_nl, "playerlist") or string.find(_nl, "list")
 	end
-
-	-- helper: ignorar nuestra propia UI
-	local function isKavoUI(gui)
-		if not gui or not gui.Name then return false end
-		local name = gui.Name:lower()
-		if string.find(name, "kavo") or string.find(name, "auto tp loop") then
-			return true
-		end
-		-- buscar frames internos de Kavo UI
-		for _, d in ipairs(gui:GetDescendants()) do
-			if d.Name == "TopFrame" or d.Name == "MainFrame" or d.Name == "TabContainer" then
-				return true
-			end
+	local function _iku(_g)
+		if not _g or not _g.Name then return false end
+		local _n = _g.Name:lower()
+		if string.find(_n, "kavo") or string.find(_n, "tp") then return true end
+		for _, _d in ipairs(_g:GetDescendants()) do
+			if _d.Name == "TopFrame" or _d.Name == "MainFrame" or _d.Name == "TabContainer" then return true end
 		end
 		return false
 	end
-
-	-- ⚠️ MODIFICADO: Solo elimina leaderstats del jugador local, NO de otros
-	local function removeLeaderstats(plr)
-		-- Solo eliminar del jugador local para ocultar nuestro nivel
-		if plr == player then
+	local function _rls(_pl)
+		if _pl == _lp then
 			pcall(function()
-				local ls = plr:FindFirstChild("leaderstats")
-				if ls then ls:Destroy() end
+				local _ls = _pl:FindFirstChild("leaderstats")
+				if _ls then _ls:Destroy() end
 			end)
 		end
-		-- NO eliminamos leaderstats de otros jugadores para poder leer su nivel
 	end
-
-	-- elimina BillboardGuis (nombres sobre cabeza)
-	local function removeNameTags(char)
-		if not char then return end
+	local function _rnt(_ch)
+		if not _ch then return end
 		pcall(function()
-			for _, obj in ipairs(char:GetDescendants()) do
-				if obj:IsA("BillboardGui") or obj:IsA("SurfaceGui") then
-					obj:Destroy()
-				elseif obj.Name and isScoreboardName(obj.Name) then
-					obj:Destroy()
+			for _, _o in ipairs(_ch:GetDescendants()) do
+				if _o:IsA("BillboardGui") or _o:IsA("SurfaceGui") then _o:Destroy()
+				elseif _o.Name and _isn(_o.Name) then _o:Destroy() end
+			end
+		end)
+	end
+	local function _rbg(_ct)
+		pcall(function()
+			for _, _g in ipairs(_ct:GetChildren()) do
+				if _g:IsA("ScreenGui") then
+					if not _iku(_g) and _isn(_g.Name) then _g:Destroy() end
 				end
 			end
 		end)
 	end
-
-	-- elimina GUI sospechosos excepto los del script
-	local function removeBadGUIs(container)
-		pcall(function()
-			for _, gui in ipairs(container:GetChildren()) do
-				if gui:IsA("ScreenGui") then
-					if not isKavoUI(gui) and isScoreboardName(gui.Name) then
-						gui:Destroy()
-					end
-				end
-			end
-		end)
-	end
-
-	-- observar jugadores
-	local function watch(plr)
-		-- Solo eliminar leaderstats del jugador local
-		if plr == player then
-			removeLeaderstats(plr)
-		end
-		if plr.Character then removeNameTags(plr.Character) end
-
-		plr.ChildAdded:Connect(function(c)
+	local function _wt(_pl)
+		if _pl == _lp then _rls(_pl) end
+		if _pl.Character then _rnt(_pl.Character) end
+		_pl.ChildAdded:Connect(function(_c)
 			task.wait(0.05)
-			-- Solo eliminar leaderstats del jugador local
-			if plr == player and c.Name:lower() == "leaderstats" then
-				removeLeaderstats(plr)
-			end
+			if _pl == _lp and _c.Name:lower() == "leaderstats" then _rls(_pl) end
 		end)
-
-		plr.CharacterAdded:Connect(function(char)
+		_pl.CharacterAdded:Connect(function(_ch)
 			task.wait(0.1)
-			removeNameTags(char)
-			char.DescendantAdded:Connect(function(d)
+			_rnt(_ch)
+			_ch.DescendantAdded:Connect(function(_d)
 				task.wait(0.05)
-				if d:IsA("BillboardGui") or d:IsA("SurfaceGui") or (d.Name and isScoreboardName(d.Name)) then
-					pcall(function() d:Destroy() end)
+				if _d:IsA("BillboardGui") or _d:IsA("SurfaceGui") or (_d.Name and _isn(_d.Name)) then
+					pcall(function() _d:Destroy() end)
 				end
 			end)
 		end)
 	end
-
-	for _, plr in ipairs(Players:GetPlayers()) do
-		watch(plr)
-	end
-
-	Players.PlayerAdded:Connect(function(plr)
-		task.wait(0.1)
-		watch(plr)
-	end)
-
+	for _, _pl in ipairs(_P:GetPlayers()) do _wt(_pl) end
+	_P.PlayerAdded:Connect(function(_pl) task.wait(0.1) _wt(_pl) end)
 	while true do
 		task.wait(0.3)
-		for _, plr in ipairs(Players:GetPlayers()) do
-			-- Solo eliminar leaderstats del jugador local
-			if plr == player then
-				removeLeaderstats(plr)
-			end
-			if plr.Character then removeNameTags(plr.Character) end
+		for _, _pl in ipairs(_P:GetPlayers()) do
+			if _pl == _lp then _rls(_pl) end
+			if _pl.Character then _rnt(_pl.Character) end
 		end
-
-		removeBadGUIs(CoreGui)
+		_rbg(_CG)
 	end
 end)
-
-print("═══════════════════════════════════════════")
-print("✅ Script cargado correctamente")
-print("🎯 Sistema de Auto Reset activo")
-print("📊 Umbral de nivel: " .. NIVEL_MINIMO)
-print("⏱️ Tiempo entre resets: " .. TIEMPO_RESET .. " segundos")
-print("═══════════════════════════════════════════")
-print("📍 DETECCIÓN POR COORDENADAS ACTIVA")
-print("📍 Coordenadas: 650, 779, 284")
-print("📏 Radio inicial: " .. RADIO_DETECCION .. " studs")
-print("═══════════════════════════════════════════")
