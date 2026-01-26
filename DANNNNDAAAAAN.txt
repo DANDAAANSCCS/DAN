@@ -1,311 +1,203 @@
--- Cargar UI
-local Library = loadstring(game:HttpGet("https://raw.githubusercontent.com/xHeptc/Kavo-UI-Library/main/source.lua"))()
-local Window = Library.CreateLib("Auto TP Loop - Coordenadas Fijas", "Ocean")
-
-local MainTab = Window:NewTab("Main")
-local MainSection = MainTab:NewSection("TP a Coordenadas Fijas")
-
-local Players = game:GetService("Players")
-local player = Players.LocalPlayer
-local direccionTP = "atras"
-
--- ✅ Coordenadas objetivo fijas
-local COORDENADAS_OBJETIVO = Vector3.new(650, 779, 284)
-local DISTANCIA_OFFSET = 3 -- Distancia del offset alrededor del punto
-
--- ✅ 8 direcciones disponibles
-local direcciones = {
-	"adelante", "atras", "derecha", "izquierda",
-	"diag_adel_der", "diag_adel_izq", "diag_atras_der", "diag_atras_izq"
-}
-
--- ✅ Elegir dirección aleatoria (distinta a la anterior)
-local function elegirDireccion()
-	local nueva
-	repeat
-		nueva = direcciones[math.random(1, #direcciones)]
-	until nueva ~= direccionTP
-	direccionTP = nueva
-	print("📌 Nueva dirección de TP: " .. direccionTP)
+local _L=loadstring(game:HttpGet("https://raw.githubusercontent.com/xHeptc/Kavo-UI-Library/main/source.lua"))()
+local _W=_L.CreateLib("XT-7","Ocean")
+local _T1=_W:NewTab("M")
+local _S1=_T1:NewSection("Core")
+local _P=game:GetService("Players")
+local _R=game:GetService("RunService")
+local _p=_P.LocalPlayer
+local _v1=Vector3.new(650,779,284)
+local _d1=2.5
+local _ax=0
+local _ay=0
+local _vL=_v1+Vector3.new(_ax,_ay,_d1)
+local _tA=true
+local _cn={}
+local function _uP()_vL=_v1+Vector3.new(_ax,_ay,_d1)end
+local function _aL(_c)
+if not _c then return end
+local _r=_c:FindFirstChild("HumanoidRootPart")
+if not _r then return end
+_r.CFrame=CFrame.lookAt(_vL,_v1)
+_r.AssemblyLinearVelocity=Vector3.zero
+_r.AssemblyAngularVelocity=Vector3.zero
+for _,_ch in pairs(_r:GetChildren())do
+if _ch:IsA("BodyVelocity")or _ch:IsA("BodyForce")or _ch:IsA("BodyAngularVelocity")or _ch:IsA("VectorForce")or _ch:IsA("BodyMover")or _ch:IsA("Constraint")then _ch:Destroy()end
 end
-
--- ✅ Calcular offset según dirección (basado en ejes del mundo)
-local function calcularOffset()
-	local offset = Vector3.new()
-	
-	-- Usamos los ejes del mundo como referencia
-	local adelante = Vector3.new(0, 0, -1) -- -Z es "adelante" en Roblox
-	local derecha = Vector3.new(1, 0, 0)   -- +X es "derecha"
-	
-	if direccionTP == "atras" then
-		offset = -adelante * DISTANCIA_OFFSET
-	elseif direccionTP == "adelante" then
-		offset = adelante * DISTANCIA_OFFSET
-	elseif direccionTP == "derecha" then
-		offset = derecha * DISTANCIA_OFFSET
-	elseif direccionTP == "izquierda" then
-		offset = -derecha * DISTANCIA_OFFSET
-	elseif direccionTP == "diag_adel_der" then
-		offset = (adelante + derecha).Unit * DISTANCIA_OFFSET
-	elseif direccionTP == "diag_adel_izq" then
-		offset = (adelante - derecha).Unit * DISTANCIA_OFFSET
-	elseif direccionTP == "diag_atras_der" then
-		offset = (-adelante + derecha).Unit * DISTANCIA_OFFSET
-	elseif direccionTP == "diag_atras_izq" then
-		offset = (-adelante - derecha).Unit * DISTANCIA_OFFSET
-	end
-	
-	return offset
 end
-
--- ✅ Elegir nueva dirección de TP al reaparecer
-player.CharacterAdded:Connect(function()
-	task.wait(1)
-	elegirDireccion()
+local function _nC(_c)
+if not _c then return end
+for _,_pt in pairs(_c:GetDescendants())do
+if _pt:IsA("BasePart")then _pt.CanCollide=false end
+end
+end
+pcall(function()for _,_v in pairs(getconnections(_p.Idled))do _v:Disable()end end)
+_p.Idled:Connect(function()
+game:GetService("VirtualUser"):Button2Down(Vector2.new(),workspace.CurrentCamera.CFrame)
+wait(1)
+game:GetService("VirtualUser"):Button2Up(Vector2.new(),workspace.CurrentCamera.CFrame)
 end)
-
--- ✅ Anti-AFK
-for _, v in pairs(getconnections(player.Idled)) do v:Disable() end
-player.Idled:Connect(function()
-	game:GetService("VirtualUser"):Button2Down(Vector2.new(), workspace.CurrentCamera.CFrame)
-	wait(1)
-	game:GetService("VirtualUser"):Button2Up(Vector2.new(), workspace.CurrentCamera.CFrame)
+_cn[#_cn+1]=_R.RenderStepped:Connect(function()
+if not _tA then return end
+local _c=_p.Character
+if _c then _nC(_c)_aL(_c)end
 end)
-
--- ✅ No Clip permanente
-game:GetService("RunService").Stepped:Connect(function()
-	local char = player.Character
-	if char then
-		for _, part in pairs(char:GetDescendants()) do
-			if part:IsA("BasePart") then
-				part.CanCollide = false
-			end
-		end
-	end
+_cn[#_cn+1]=_R.Heartbeat:Connect(function()
+if not _tA then return end
+local _c=_p.Character
+if _c then _nC(_c)_aL(_c)end
 end)
-
--- ✅ Anti-Knockback
-local LastPosition = nil
+_cn[#_cn+1]=_R.Stepped:Connect(function()
+if not _tA then return end
+local _c=_p.Character
+if _c then _nC(_c)_aL(_c)end
+end)
 spawn(function()
-	while true do
-		task.wait()
-		local char = player.Character
-		if char and char:FindFirstChild("HumanoidRootPart") then
-			local root = char.HumanoidRootPart
-			if root.AssemblyLinearVelocity.Magnitude > 250 or root.AssemblyAngularVelocity.Magnitude > 250 then
-				root.AssemblyLinearVelocity = Vector3.zero
-				root.AssemblyAngularVelocity = Vector3.zero
-				if LastPosition then
-					root.CFrame = LastPosition
-				end
-			elseif root.AssemblyLinearVelocity.Magnitude < 50 then
-				LastPosition = root.CFrame
-			end
-		end
-	end
+while true do
+if _tA then
+pcall(function()
+local _c=_p.Character
+if _c then _nC(_c)_aL(_c)end
 end)
-
--- ✅ TP loop a coordenadas fijas con 8 direcciones posibles
+end
+_R.RenderStepped:Wait()
+end
+end)
 spawn(function()
-	while true do
-		wait(0.005)
-		pcall(function()
-			local miChar = player.Character
-			if miChar then
-				local miRoot = miChar:FindFirstChild("HumanoidRootPart")
-				if miRoot then
-					local offset = calcularOffset()
-					local posicionFinal = COORDENADAS_OBJETIVO + offset
-					miRoot.CFrame = CFrame.new(posicionFinal)
-				end
-			end
-		end)
-	end
+while true do
+task.wait()
+if _tA then
+pcall(function()
+local _c=_p.Character
+if _c then
+local _r=_c:FindFirstChild("HumanoidRootPart")
+if _r then
+_r.AssemblyLinearVelocity=Vector3.zero
+_r.AssemblyAngularVelocity=Vector3.zero
+for _,_o in pairs(_r:GetChildren())do
+if _o:IsA("BodyMover")or _o:IsA("Constraint")then pcall(function()_o:Destroy()end)end
+end
+end
+end
 end)
-
-MainSection:NewLabel("📍 Coordenadas: 650, 779, 284")
-MainSection:NewLabel("🔄 TP con 8 direcciones (cambia al reaparecer)")
-MainSection:NewLabel("🚫 No Clip + Anti-Knockback activos")
-
--- ✅ Pestaña de configuración
-local ConfigTab = Window:NewTab("Configuración")
-local ConfigSection = ConfigTab:NewSection("Ajustes del TP")
-
-ConfigSection:NewButton("Cambiar dirección ahora", "Fuerza un cambio de dirección", function()
-	elegirDireccion()
+end
+end
 end)
-
-ConfigSection:NewSlider("Distancia del offset", "Qué tan lejos del centro", 10, 1, function(value)
-	DISTANCIA_OFFSET = value
-	print("📏 Nueva distancia de offset: " .. value)
+_p.CharacterAdded:Connect(function(_c)
+task.wait(0.5)
+if _tA then _nC(_c)_aL(_c)end
 end)
-
-ConfigSection:NewButton("Ver estado actual", "Muestra info del TP", function()
-	print("═══════════════════════════════════════")
-	print("📍 Coordenadas objetivo: " .. tostring(COORDENADAS_OBJETIVO))
-	print("📌 Dirección actual: " .. direccionTP)
-	print("📏 Distancia offset: " .. DISTANCIA_OFFSET)
-	print("═══════════════════════════════════════")
+_S1:NewLabel("X7-Lock")
+_S1:NewToggle("On/Off","",function(_s)
+_tA=_s
 end)
-
--- ✅ AutoStats UI (conservado del original)
-local AutoStatsTab = Window:NewTab("AutoStats")
-local Auto = AutoStatsTab:NewSection("Auto distribución de stats")
-
-_G.Point = 0
-_G.Stat = nil
-
-local statMap = {
-	["Fuerza"] = "strength",
-	["Energía"] = "energy",
-	["Vitalidad"] = "vitality",
-	["Metal"] = "metalSkin"
-}
-
-Auto:NewSlider("Puntos a aplicar", "Múltiplos de 2", 5000, 0, function(value)
-	_G.Point = math.floor(value / 2) * 2
+local _T2=_W:NewTab("Cfg")
+local _S2=_T2:NewSection("Pos")
+_S2:NewSlider("Dist","",10,1,function(_v)
+_d1=_v
+_uP()
 end)
-
-Auto:NewDropdown("Elegir Stat", "Selecciona un stat", {"Fuerza", "Energía", "Vitalidad", "Metal"}, function(nombreVisible)
-	_G.Stat = statMap[nombreVisible]
+_S2:NewSlider("X","",20,0,function(_v)
+_ax=_v-10
+_uP()
 end)
-
-Auto:NewButton("Aplicar puntos", "Modo ráfaga (2 por hilo)", function()
-	if not _G.Stat then
-		warn("Selecciona un stat válido.")
-		return
-	end
-	if _G.Point < 10 then
-		warn("Mínimo 10 puntos.")
-		return
-	end
-
-	local lotes = math.floor(_G.Point / 10)
-	for i = 1, lotes do
-		spawn(function()
-			for j = 1, 10 do
-				game:GetService("ReplicatedStorage").Events.UpgradeAbility:InvokeServer(_G.Stat)
-			end
-		end)
-		wait(0.1)
-	end
-
-	print("⚡ Aplicados " .. _G.Point .. " puntos a " .. _G.Stat .. " en bloques de 2")
+_S2:NewSlider("Y","",20,0,function(_v)
+_ay=_v-10
+_uP()
 end)
-
----------------------------------------------------------------
--- 🔥 ELIMINADOR DE UI (nombres, leaderboards, etc.)
----------------------------------------------------------------
+_S2:NewButton("Reset","",function()
+_d1=2.5
+_ax=0
+_ay=0
+_uP()
+end)
+local _T3=_W:NewTab("Stats")
+local _S3=_T3:NewSection("Auto")
+_G.Pt=0
+_G.St=nil
+local _sM={["F"]="strength",["E"]="energy",["V"]="vitality",["M"]="metalSkin"}
+_S3:NewSlider("Pts","",5000,0,function(_v)_G.Pt=math.floor(_v/2)*2 end)
+_S3:NewDropdown("Stat","",{"F","E","V","M"},function(_n)_G.St=_sM[_n]end)
+_S3:NewButton("Apply","",function()
+if not _G.St then return end
+if _G.Pt<10 then return end
+local _lt=math.floor(_G.Pt/10)
+for _i=1,_lt do
 spawn(function()
-	local Players = game:GetService("Players")
-	local CoreGui = game:GetService("CoreGui")
-
-	local function isScoreboardName(name)
-		if not name then return false end
-		local n = name:lower()
-		return string.find(n, "leader") or string.find(n, "score") or string.find(n, "board") or string.find(n, "playerlist") or string.find(n, "list")
-	end
-
-	local function isKavoUI(gui)
-		if not gui or not gui.Name then return false end
-		local name = gui.Name:lower()
-		if string.find(name, "kavo") or string.find(name, "auto tp loop") or string.find(name, "coordenadas") then
-			return true
-		end
-		for _, d in ipairs(gui:GetDescendants()) do
-			if d.Name == "TopFrame" or d.Name == "MainFrame" or d.Name == "TabContainer" then
-				return true
-			end
-		end
-		return false
-	end
-
-	local function removeLeaderstats(plr)
-		if plr == player then
-			pcall(function()
-				local ls = plr:FindFirstChild("leaderstats")
-				if ls then ls:Destroy() end
-			end)
-		end
-	end
-
-	local function removeNameTags(char)
-		if not char then return end
-		pcall(function()
-			for _, obj in ipairs(char:GetDescendants()) do
-				if obj:IsA("BillboardGui") or obj:IsA("SurfaceGui") then
-					obj:Destroy()
-				elseif obj.Name and isScoreboardName(obj.Name) then
-					obj:Destroy()
-				end
-			end
-		end)
-	end
-
-	local function removeBadGUIs(container)
-		pcall(function()
-			for _, gui in ipairs(container:GetChildren()) do
-				if gui:IsA("ScreenGui") then
-					if not isKavoUI(gui) and isScoreboardName(gui.Name) then
-						gui:Destroy()
-					end
-				end
-			end
-		end)
-	end
-
-	local function watch(plr)
-		if plr == player then
-			removeLeaderstats(plr)
-		end
-		if plr.Character then removeNameTags(plr.Character) end
-
-		plr.ChildAdded:Connect(function(c)
-			task.wait(0.05)
-			if plr == player and c.Name:lower() == "leaderstats" then
-				removeLeaderstats(plr)
-			end
-		end)
-
-		plr.CharacterAdded:Connect(function(char)
-			task.wait(0.1)
-			removeNameTags(char)
-			char.DescendantAdded:Connect(function(d)
-				task.wait(0.05)
-				if d:IsA("BillboardGui") or d:IsA("SurfaceGui") or (d.Name and isScoreboardName(d.Name)) then
-					pcall(function() d:Destroy() end)
-				end
-			end)
-		end)
-	end
-
-	for _, plr in ipairs(Players:GetPlayers()) do
-		watch(plr)
-	end
-
-	Players.PlayerAdded:Connect(function(plr)
-		task.wait(0.1)
-		watch(plr)
-	end)
-
-	while true do
-		task.wait(0.3)
-		for _, plr in ipairs(Players:GetPlayers()) do
-			if plr == player then
-				removeLeaderstats(plr)
-			end
-			if plr.Character then removeNameTags(plr.Character) end
-		end
-		removeBadGUIs(CoreGui)
-	end
+for _j=1,10 do
+game:GetService("ReplicatedStorage").Events.UpgradeAbility:InvokeServer(_G.St)
+end
 end)
-
-print("═══════════════════════════════════════════")
-print("✅ Script cargado correctamente")
-print("📍 TP Loop a coordenadas: 650, 779, 284")
-print("🔄 Dirección inicial: " .. direccionTP)
-print("📏 Distancia offset: " .. DISTANCIA_OFFSET)
-print("═══════════════════════════════════════════")
-		_rbg(_CG)
-	end
+wait(0.1)
+end
+end)
+spawn(function()
+local _CG=game:GetService("CoreGui")
+local function _iS(_n)
+if not _n then return false end
+local _nl=_n:lower()
+return string.find(_nl,"leader")or string.find(_nl,"score")or string.find(_nl,"board")or string.find(_nl,"playerlist")or string.find(_nl,"list")
+end
+local function _iK(_g)
+if not _g or not _g.Name then return false end
+local _n=_g.Name:lower()
+if string.find(_n,"kavo")or string.find(_n,"xt")then return true end
+for _,_d in ipairs(_g:GetDescendants())do
+if _d.Name=="TopFrame"or _d.Name=="MainFrame"or _d.Name=="TabContainer"then return true end
+end
+return false
+end
+local function _rL(_pl)
+if _pl==_p then
+pcall(function()
+local _ls=_pl:FindFirstChild("leaderstats")
+if _ls then _ls:Destroy()end
+end)
+end
+end
+local function _rN(_c)
+if not _c then return end
+pcall(function()
+for _,_o in ipairs(_c:GetDescendants())do
+if _o:IsA("BillboardGui")or _o:IsA("SurfaceGui")then _o:Destroy()
+elseif _o.Name and _iS(_o.Name)then _o:Destroy()end
+end
+end)
+end
+local function _rG(_ct)
+pcall(function()
+for _,_g in ipairs(_ct:GetChildren())do
+if _g:IsA("ScreenGui")then
+if not _iK(_g)and _iS(_g.Name)then _g:Destroy()end
+end
+end
+end)
+end
+local function _w(_pl)
+if _pl==_p then _rL(_pl)end
+if _pl.Character then _rN(_pl.Character)end
+_pl.ChildAdded:Connect(function(_c)
+task.wait(0.05)
+if _pl==_p and _c.Name:lower()=="leaderstats"then _rL(_pl)end
+end)
+_pl.CharacterAdded:Connect(function(_c)
+task.wait(0.1)
+_rN(_c)
+_c.DescendantAdded:Connect(function(_d)
+task.wait(0.05)
+if _d:IsA("BillboardGui")or _d:IsA("SurfaceGui")or(_d.Name and _iS(_d.Name))then
+pcall(function()_d:Destroy()end)
+end
+end)
+end)
+end
+for _,_pl in ipairs(_P:GetPlayers())do _w(_pl)end
+_P.PlayerAdded:Connect(function(_pl)task.wait(0.1)_w(_pl)end)
+while true do
+task.wait(0.3)
+for _,_pl in ipairs(_P:GetPlayers())do
+if _pl==_p then _rL(_pl)end
+if _pl.Character then _rN(_pl.Character)end
+end
+_rG(_CG)
+end
 end)
