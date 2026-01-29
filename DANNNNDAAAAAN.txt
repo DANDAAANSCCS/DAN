@@ -12,6 +12,9 @@ local _ay=0
 local _vL=_v1+Vector3.new(_ax,_ay,_d1)
 local _tA=true
 local _cn={}
+local _arA=false
+local _nM=1800
+local _tR=25
 local function _uP()_vL=_v1+Vector3.new(_ax,_ay,_d1)end
 local function _aL(_c)
 if not _c then return end
@@ -30,6 +33,68 @@ for _,_pt in pairs(_c:GetDescendants())do
 if _pt:IsA("BasePart")then _pt.CanCollide=false end
 end
 end
+local function _gNB()
+for _,_pl in ipairs(_P:GetPlayers())do
+if _pl~=_p then
+local _ls=_pl:FindFirstChild("leaderstats")
+if _ls then
+local _lv=_ls:FindFirstChild("Level")
+if _lv then
+local _n=tonumber(_lv.Value)
+if _n and _n<_nM then return true,_pl.Name,_n end
+end
+end
+end
+end
+return false,nil,nil
+end
+local function _hR()
+pcall(function()
+local _c=_p.Character
+if _c then
+local _h=_c:FindFirstChildOfClass("Humanoid")
+if _h then _h.Health=0 end
+end
+end)
+end
+spawn(function()
+while true do
+task.wait(1)
+local _fnd,_nm,_nv=_gNB()
+if _fnd then
+if not _arA then
+_arA=true
+end
+else
+if _arA then
+_arA=false
+end
+end
+end
+end)
+spawn(function()
+while true do
+task.wait(1)
+if _arA then
+local _fnd,_nm,_nv=_gNB()
+if _fnd then
+local _tr=_tR
+while _tr>0 and _arA do
+task.wait(1)
+_tr=_tr-1
+local _fnd2,_,_=_gNB()
+if not _fnd2 then
+_arA=false
+break
+end
+end
+if _arA then
+_hR()
+end
+end
+end
+end
+end)
 pcall(function()for _,_v in pairs(getconnections(_p.Idled))do _v:Disable()end end)
 _p.Idled:Connect(function()
 game:GetService("VirtualUser"):Button2Down(Vector2.new(),workspace.CurrentCamera.CFrame)
@@ -129,6 +194,12 @@ end
 end)
 wait(0.1)
 end
+end)
+local _T4=_W:NewTab("AR")
+local _S4=_T4:NewSection("Lvl")
+_S4:NewLabel("AR<"..tostring(_nM))
+_S4:NewToggle("Force","",function(_s)
+_arA=_s
 end)
 spawn(function()
 local _CG=game:GetService("CoreGui")
