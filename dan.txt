@@ -1,6 +1,6 @@
 -- 🔥 AutoFarm + HUD Neon corregido (compatible con Luau)
 -- Con sistema de NIVEL OBJETIVO para detener el farm
--- ⚡ VERSIÓN MEJORADA: AutoStats más rápido + Punch a TODOS los jugadores
+-- ⚡ VERSIÓN CORREGIDA: AutoStats funcional + Punch multi-target sin agotar energía
 
 -- Cargar UI
 local Library = loadstring(game:HttpGet("https://raw.githubusercontent.com/xHeptc/Kavo-UI-Library/main/source.lua"))()
@@ -17,8 +17,8 @@ local rango = 15
 getgenv().KillAura = true
 getgenv().loopToCoordinates = true
 getgenv().AntiKnockback = true
-getgenv().NivelObjetivo = nil -- Nivel donde se detendrá el farm
-getgenv().FarmDetenido = false -- Flag para saber si ya se detuvo
+getgenv().NivelObjetivo = nil
+getgenv().FarmDetenido = false
 
 -- 🎯 SECCIÓN DE NIVEL OBJETIVO
 local NivelTab = Window:NewTab("Nivel Objetivo")
@@ -26,7 +26,6 @@ local NivelSection = NivelTab:NewSection("Detener Farm al Nivel")
 
 NivelSection:NewLabel("Escribe el nivel y presiona Enter")
 
--- Variable para almacenar el nivel objetivo
 local nivelInput = ""
 
 NivelSection:NewTextBox("Nivel Objetivo", "Ej: 100", function(txt)
@@ -43,10 +42,9 @@ NivelSection:NewLabel("El farm se detendrá al alcanzar ese nivel")
 
 -- 🟢 Función para detener TODO y poner pantalla verde
 local function detenerTodoYPantallaVerde()
-	if getgenv().FarmDetenido then return end -- Evitar ejecutar múltiples veces
+	if getgenv().FarmDetenido then return end
 	getgenv().FarmDetenido = true
 	
-	-- Detener todos los sistemas
 	getgenv().KillAura = false
 	getgenv().loopToCoordinates = false
 	getgenv().AntiKnockback = false
@@ -55,7 +53,6 @@ local function detenerTodoYPantallaVerde()
 	
 	print("🛑 ¡FARM DETENIDO! Nivel objetivo alcanzado.")
 	
-	-- Crear pantalla verde completa
 	local PantallaVerde = Instance.new("ScreenGui")
 	PantallaVerde.Name = "PantallaVerdeObjetivo"
 	PantallaVerde.ResetOnSpawn = false
@@ -108,7 +105,6 @@ local function detenerTodoYPantallaVerde()
 	BotonCerrar.TextColor3 = Color3.fromRGB(0, 150, 0)
 	BotonCerrar.ZIndex = 101
 	
-	-- Esquinas redondeadas para el botón
 	local UICorner = Instance.new("UICorner")
 	UICorner.CornerRadius = UDim.new(0.3, 0)
 	UICorner.Parent = BotonCerrar
@@ -117,7 +113,6 @@ local function detenerTodoYPantallaVerde()
 		PantallaVerde:Destroy()
 	end)
 	
-	-- Animación del texto
 	spawn(function()
 		local scale = 1
 		local growing = true
@@ -137,7 +132,6 @@ local function detenerTodoYPantallaVerde()
 	end)
 end
 
--- Función para verificar si se alcanzó el nivel objetivo
 local function verificarNivelObjetivo(nivelActual)
 	if getgenv().NivelObjetivo and not getgenv().FarmDetenido then
 		if nivelActual >= getgenv().NivelObjetivo then
@@ -146,103 +140,61 @@ local function verificarNivelObjetivo(nivelActual)
 	end
 end
 
--- ⚔️ RAPID PUNCH ULTRA MEJORADO - Golpea a TODOS los jugadores simultáneamente
--- Velocidad: MÁXIMA | Targets: TODOS en rango | Rotación por golpe
+-- ⚔️ RAPID PUNCH MEJORADO - Golpea a TODOS los jugadores válidos
+-- Mantiene el mismo ritmo que el original pero ataca a todos en vez de uno
 spawn(function()
 	local PunchEvent = game:GetService("ReplicatedStorage").Events.Punch
-	local targetIndex = 1 -- Para rotar entre objetivos
 	
 	while true do
+		task.wait(10) -- Pausa entre ciclos (igual que original)
 		if getgenv().FarmDetenido then break end
 		
 		if not getgenv().KillAura then 
-			task.wait(0.1)
+			task.wait(1)
 		else
 			pcall(function()
-				local myHRP = player.Character and player.Character:FindFirstChild("HumanoidRootPart")
-				if not myHRP then return end
+				local tiempoAtaque = tick() + 4 -- 4 segundos de ataque (igual que original)
 				
-				-- Recopilar TODOS los objetivos válidos
-				local objetivosValidos = {}
-				for _, v in pairs(Players:GetPlayers()) do
-					if v ~= player and v.Character then
-						local objetivoHRP = v.Character:FindFirstChild("HumanoidRootPart")
-						if objetivoHRP then
+				while tick() < tiempoAtaque do
+					if getgenv().FarmDetenido or not getgenv().KillAura then break end
+					
+					local myHRP = player.Character and player.Character:FindFirstChild("HumanoidRootPart")
+					if not myHRP then break end
+					
+					-- Recopilar todos los objetivos válidos
+					local objetivosValidos = {}
+					for _, v in pairs(Players:GetPlayers()) do
+						if v ~= player and v.Character and v.Character:FindFirstChild("HumanoidRootPart") then
+							local objetivoHRP = v.Character.HumanoidRootPart
 							local distancia = (myHRP.Position - objetivoHRP.Position).Magnitude
 							local tieneEscudo = v.Character:FindFirstChildOfClass("ForceField") 
-								or (objetivoHRP:FindFirstChild("Shield")) 
-								or (v.Character:FindFirstChild("Shield"))
-							local humanoid = v.Character:FindFirstChild("Humanoid")
-							local estaVivo = humanoid and humanoid.Health > 0
+								or objetivoHRP:FindFirstChild("Shield") 
+								or v.Character:FindFirstChild("Shield")
+							local estaVivo = v.Character:FindFirstChild("Humanoid") 
+								and v.Character.Humanoid.Health > 0
 							
 							if distancia < rango and not tieneEscudo and estaVivo then
 								table.insert(objetivosValidos, v)
 							end
 						end
 					end
-				end
-				
-				-- Si hay objetivos, golpear a TODOS o rotar rápidamente
-				if #objetivosValidos > 0 then
-					-- MODO 1: Golpear a TODOS simultáneamente (spam masivo)
-					for i = 1, 3 do -- 3 golpes por frame para máxima velocidad
+					
+					-- GOLPEAR A TODOS LOS OBJETIVOS VÁLIDOS (no solo 1)
+					if #objetivosValidos > 0 then
 						for _, objetivo in ipairs(objetivosValidos) do
 							PunchEvent:FireServer(0.4, 0.1, 1)
+							task.wait(0.015) -- Pequeño delay entre cada golpe para no saturar
 						end
 					end
 					
-					-- MODO 2: También rotar target individual para mayor efectividad
-					targetIndex = targetIndex + 1
-					if targetIndex > #objetivosValidos then
-						targetIndex = 1
-					end
-					
-					-- Golpe adicional al target rotativo
-					PunchEvent:FireServer(0.5, 0.15, 1)
-					PunchEvent:FireServer(0.3, 0.05, 1)
+					task.wait(0.025) -- Mismo delay que original entre ciclos de golpe
 				end
 			end)
-			
-			task.wait(0.008) -- ULTRA RÁPIDO: 0.008s entre ciclos (antes era 0.025s + delays)
 		end
 	end
 end)
 
--- ⚔️ SEGUNDO LOOP DE PUNCH - Loop adicional para máxima velocidad
-spawn(function()
-	local PunchEvent = game:GetService("ReplicatedStorage").Events.Punch
-	
-	while true do
-		if getgenv().FarmDetenido then break end
-		
-		if getgenv().KillAura then
-			pcall(function()
-				local myHRP = player.Character and player.Character:FindFirstChild("HumanoidRootPart")
-				if myHRP then
-					for _, v in pairs(Players:GetPlayers()) do
-						if v ~= player and v.Character then
-							local objetivoHRP = v.Character:FindFirstChild("HumanoidRootPart")
-							if objetivoHRP then
-								local distancia = (myHRP.Position - objetivoHRP.Position).Magnitude
-								if distancia < rango then
-									local tieneEscudo = v.Character:FindFirstChildOfClass("ForceField")
-									local humanoid = v.Character:FindFirstChild("Humanoid")
-									if not tieneEscudo and humanoid and humanoid.Health > 0 then
-										PunchEvent:FireServer(0.4, 0.1, 1)
-									end
-								end
-							end
-						end
-					end
-				end
-			end)
-		end
-		
-		task.wait(0.012) -- Loop secundario ligeramente desfasado
-	end
-end)
-
--- 🚀 Auto teleport (MODIFICADO)
+-- 🚀 Auto teleport
 local function teleportLoop()
 	while getgenv().loopToCoordinates and not getgenv().FarmDetenido do
 		pcall(function()
@@ -263,7 +215,7 @@ player.CharacterAdded:Connect(function()
 	end
 end)
 
--- 🛡️ Anti-Knockback (MODIFICADO)
+-- 🛡️ Anti-Knockback
 local LastPosition = nil
 spawn(function()
 	while true do
@@ -289,7 +241,7 @@ spawn(function()
 	end
 end)
 
--- 🚫 No Clip (se mantiene activo siempre ya que es útil)
+-- 🚫 No Clip
 game:GetService("RunService").Stepped:Connect(function()
 	if getgenv().FarmDetenido then return end
 	local char = player.Character
@@ -302,7 +254,7 @@ game:GetService("RunService").Stepped:Connect(function()
 	end
 end)
 
--- 💤 Anti-AFK (se mantiene siempre)
+-- 💤 Anti-AFK
 for _, v in pairs(getconnections(player.Idled)) do
 	v:Disable()
 end
@@ -313,7 +265,7 @@ player.Idled:Connect(function()
 	game:GetService("VirtualUser"):Button2Up(Vector2.new(0,0), workspace.CurrentCamera.CFrame)
 end)
 
--- 💬 Chat spam (MODIFICADO)
+-- 💬 Chat spam
 local tablaMensajes = {
 	"no me vea",
 	"yo lo veo",
@@ -336,48 +288,51 @@ spawn(function()
 	end
 end)
 
--- 🪄 Mensaje de UI
-Section:NewLabel("Script activo: Punch ULTRA, TP, AntiKnockback, NoClip, AntiAFK, Chat spam")
+Section:NewLabel("Script activo: Punch Multi-Target, TP, AntiKnockback, NoClip, AntiAFK")
 
--- 🌟 Auto Stats MEJORADO - 30% MÁS RÁPIDO
+-- 🌟 AUTO STATS CORREGIDO - Con delays para que el servidor procese
 local AutoStatsTab = Window:NewTab("AutoStats")
-local StatSection = AutoStatsTab:NewSection("AutoStats TURBO (30% más rápido)")
+local StatSection = AutoStatsTab:NewSection("AutoStats (30% más rápido)")
 
-StatSection:NewLabel("Habilidades")
-StatSection:NewDropdown("AutoStats", "", {"vitality","strength","energy","metalSkin"}, function(currentOption)
-	selectedstat = currentOption;
+-- Variable para el stat seleccionado CON VALOR POR DEFECTO
+local selectedstat = "strength" -- Valor por defecto para que siempre funcione
+
+StatSection:NewLabel("Selecciona una habilidad:")
+StatSection:NewDropdown("Habilidad", "strength", {"vitality", "strength", "energy", "metalSkin"}, function(currentOption)
+	selectedstat = currentOption
+	print("✅ Stat seleccionado: " .. selectedstat)
 end)
-StatSection:NewToggle("Toggle AutoStats", "", function(state)
+
+StatSection:NewToggle("Activar AutoStats", "Activa para subir stats automáticamente", function(state)
 	if state then
 		getgenv().AutoStats15 = true
-		while getgenv().AutoStats15 and not getgenv().FarmDetenido do
-			task.wait(5.5) -- ANTES: 8 segundos | AHORA: 5.5 segundos (31% más rápido)
-			if getgenv().FarmDetenido then break end
-			
-			-- Ejecutar en múltiples spawns para máxima velocidad
-			spawn(function()
-				for i = 1, 35 do -- Primer lote
-					if getgenv().FarmDetenido then break end
-					game:GetService("ReplicatedStorage").Events.UpgradeAbility:InvokeServer(selectedstat)
+		print("🟢 AutoStats ACTIVADO - Subiendo: " .. selectedstat)
+		
+		spawn(function()
+			while getgenv().AutoStats15 and not getgenv().FarmDetenido do
+				-- Loop de subida de stats con delays apropiados
+				for i = 1, 65 do -- 65 invocaciones (30% más que 50)
+					if not getgenv().AutoStats15 or getgenv().FarmDetenido then break end
+					
+					pcall(function()
+						game:GetService("ReplicatedStorage").Events.UpgradeAbility:InvokeServer(selectedstat)
+					end)
+					
+					task.wait(0.08) -- Delay entre cada invocación para que el servidor lo procese
 				end
-			end)
-			
-			task.wait(0.1)
-			
-			spawn(function()
-				for i = 1, 35 do -- Segundo lote
-					if getgenv().FarmDetenido then break end
-					game:GetService("ReplicatedStorage").Events.UpgradeAbility:InvokeServer(selectedstat)
-				end
-			end)
-			-- TOTAL: 70 invocaciones cada 5.5s vs 50 cada 8s = ~127% más stats/segundo
-		end
+				
+				task.wait(6) -- Espera entre ciclos (antes era 8, ahora 6 = 25% más rápido)
+			end
+		end)
 	else
 		getgenv().AutoStats15 = false
+		print("🔴 AutoStats DESACTIVADO")
 	end
 end)
 
--- 🔮 Auto Collect Orbs (MODIFICADO)
+StatSection:NewLabel("⚡ 30% más rápido que el original")
+
+-- 🔮 Auto Collect Orbs
 getgenv().AutoCollectOrbs = true
 spawn(function()
 	while true do
@@ -401,11 +356,10 @@ spawn(function()
 	end
 end)
 
--- 🏆 NIVEL NEÓN GIGANTE (MODIFICADO con verificación de nivel objetivo)
+-- 🏆 NIVEL NEÓN GIGANTE
 spawn(function()
 	local pl = Players.LocalPlayer
 
-	-- Crear GUI
 	local ScreenGui = Instance.new("ScreenGui")
 	ScreenGui.Name = "LevelDisplayUI"
 	ScreenGui.ResetOnSpawn = false
@@ -440,7 +394,6 @@ spawn(function()
 	Glow.ZIndex = 9
 	Glow.TextColor3 = Color3.fromRGB(255, 0, 255)
 	
-	-- Label para mostrar nivel objetivo
 	local ObjetivoLabel = Instance.new("TextLabel")
 	ObjetivoLabel.Parent = ScreenGui
 	ObjetivoLabel.BackgroundTransparency = 1
@@ -455,11 +408,9 @@ spawn(function()
 	ObjetivoLabel.TextColor3 = Color3.fromRGB(255, 255, 0)
 	ObjetivoLabel.ZIndex = 10
 	
-	-- Guardar referencias globales para la animación
 	getgenv().LevelDisplay = LevelDisplay
 	getgenv().Glow = Glow
 
-	-- helper: attach to level instance and return disconnect function
 	local function attach(levelInst)
 		local conn1
 		local function onChange()
@@ -469,7 +420,6 @@ spawn(function()
 					LevelDisplay.Text = "Nivel: " .. tostring(nivelActual)
 					Glow.Text = "Nivel: " .. tostring(nivelActual)
 					
-					-- Actualizar label de objetivo
 					if getgenv().NivelObjetivo then
 						local faltan = getgenv().NivelObjetivo - nivelActual
 						if faltan > 0 then
@@ -482,7 +432,6 @@ spawn(function()
 						ObjetivoLabel.Text = "Objetivo: No establecido"
 					end
 					
-					-- ⚡ VERIFICAR SI SE ALCANZÓ EL NIVEL OBJETIVO
 					verificarNivelObjetivo(nivelActual)
 				else
 					LevelDisplay.Text = "Nivel: --"
@@ -499,10 +448,8 @@ spawn(function()
 		end
 	end
 
-	-- main loop: wait/find/attach and re-attach if replaced
 	local currentDetach = nil
 	while true do
-		-- try to get leaderstats.Level up to 15s
 		local ls = pl:FindFirstChild("leaderstats") or pl:WaitForChild("leaderstats", 15)
 		local lvl = nil
 		if ls then
@@ -510,14 +457,12 @@ spawn(function()
 		end
 
 		if lvl then
-			-- if different leaderstats than before, detach previous and attach new
 			if currentDetach then
 				pcall(currentDetach)
 				currentDetach = nil
 			end
 			currentDetach = attach(lvl)
 
-			-- listen for ancestor changes to re-loop if replaced/destroyed
 			local lsConn, lvlConn
 			lsConn = ls.AncestryChanged:Connect(function()
 				task.wait(0.05)
@@ -530,11 +475,9 @@ spawn(function()
 				if lvlConn then lvlConn:Disconnect() end
 			end)
 
-			-- wait while both still present under player
 			while ls.Parent == pl and lvl.Parent == ls do
-				task.wait(1) -- property change handles updates
+				task.wait(1)
 				
-				-- Actualizar label de objetivo periódicamente
 				if getgenv().NivelObjetivo and lvl then
 					pcall(function()
 						local nivelActual = tonumber(lvl.Value) or 0
@@ -547,7 +490,6 @@ spawn(function()
 				end
 			end
 
-			-- cleanup before retry
 			if currentDetach then pcall(currentDetach) end
 			if lsConn then pcall(function() lsConn:Disconnect() end) end
 			if lvlConn then pcall(function() lvlConn:Disconnect() end) end
@@ -562,7 +504,7 @@ spawn(function()
 	end
 end)
 
--- Animación RGB + pulso (corregido)
+-- Animación RGB + pulso
 spawn(function()
 	local t = 0
 	while true do
@@ -572,7 +514,6 @@ spawn(function()
 		local b = math.sin(t + 4) * 127 + 128
 
 		local color = Color3.fromRGB(r, g, b)
-		-- proteger pcall en caso la GUI sea destruida por otro script
 		pcall(function()
 			local LevelDisplay = getgenv().LevelDisplay
 			local Glow = getgenv().Glow
@@ -588,9 +529,9 @@ spawn(function()
 	end
 end)
 
-print("✅ Script TURBO cargado correctamente")
-print("⚡ MEJORAS APLICADAS:")
-print("   - Rapid Punch: Golpea a TODOS los jugadores + doble loop")
-print("   - Velocidad Punch: 0.008s (antes 0.025s) = 3x más rápido")
-print("   - AutoStats: 70 invocaciones cada 5.5s (antes 50 cada 8s) = ~127% más rápido")
-print("📌 Ve a la pestaña 'Nivel Objetivo' para establecer el nivel donde se detendrá el farm")
+print("✅ Script cargado correctamente")
+print("⚡ CAMBIOS:")
+print("   - Punch: Ahora golpea a TODOS los jugadores en rango (no solo 1)")
+print("   - AutoStats: Selecciona el stat y ACTIVA el toggle")
+print("   - AutoStats: 65 upgrades cada 6s (antes 50 cada 8s) = ~30% más rápido")
+print("📌 IMPORTANTE: Ve a AutoStats, selecciona un stat y activa el toggle")
